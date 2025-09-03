@@ -1,31 +1,20 @@
+// Supabase 설정
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 // 앱 상태
 let currentUser = null;
 let currentPage = 'dashboard';
-        let members = [
-            { id: 'mnj510', name: '오키', code: 'mnj510', isAdmin: true },
-            { id: 'member1', name: '참기름', code: 'WAKE001' },
-            { id: 'member2', name: '동행', code: 'WAKE002' },
-            { id: 'member3', name: '완료주의자', code: 'WAKE003' },
-            { id: 'member4', name: '은호', code: 'WAKE004' },
-            { id: 'member5', name: '쿼카', code: 'WAKE005' },
-            { id: 'member6', name: '김은아', code: 'WAKE006' },
-            { id: 'member7', name: '비채', code: 'WAKE007' },
-            { id: 'member8', name: '제가이버', code: 'WAKE008' },
-            { id: 'member9', name: '배소영', code: 'WAKE009' },
-            { id: 'member10', name: '해량', code: 'WAKE010' },
-            { id: 'member11', name: '호나인', code: 'WAKE011' },
-            { id: 'member12', name: '현진', code: 'WAKE012' },
-            { id: 'member13', name: '박뱅', code: 'WAKE013' },
-            { id: 'member14', name: '달콩', code: 'WAKE014' },
-            { id: 'member15', name: '히프노스', code: 'WAKE015' }
-        ];
-
-// 데이터 저장 (실제로는 Supabase 등 DB 사용)
+let members = [];
 let checkData = {};
 let mustRecords = {};
 
         // 초기화
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Supabase에서 데이터 로드
+            await loadDataFromSupabase();
+            
             // lucide 라이브러리가 로드될 때까지 대기
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
@@ -614,6 +603,90 @@ function calculateScore(memberId, month, year) {
             personalCalendar.innerHTML = calendarHTML;
         }
 
+        // Supabase에서 데이터 로드
+        async function loadDataFromSupabase() {
+            try {
+                // 멤버 목록 로드
+                const { data: membersData, error: membersError } = await supabase
+                    .from('members')
+                    .select('*')
+                    .order('name');
+                
+                if (membersError) throw membersError;
+                members = membersData || [];
+                
+                // 기본 데이터가 없으면 초기화
+                if (members.length === 0) {
+                    initializeDefaultData();
+                }
+                
+                // 기상 체크 데이터 로드
+                const { data: checkDataResult, error: checkError } = await supabase
+                    .from('check_data')
+                    .select('*');
+                
+                if (checkError) throw checkError;
+                
+                // 데이터를 객체 형태로 변환
+                checkData = {};
+                checkDataResult?.forEach(record => {
+                    if (!checkData[record.member_id]) {
+                        checkData[record.member_id] = {};
+                    }
+                    checkData[record.member_id][record.date] = {
+                        wakeUp: record.wake_up,
+                        frog: record.frog,
+                        must: record.must
+                    };
+                });
+                
+                // MUST 기록 데이터 로드
+                const { data: mustDataResult, error: mustError } = await supabase
+                    .from('must_records')
+                    .select('*');
+                
+                if (mustError) throw mustError;
+                
+                // 데이터를 객체 형태로 변환
+                mustRecords = {};
+                mustDataResult?.forEach(record => {
+                    if (!mustRecords[record.member_id]) {
+                        mustRecords[record.member_id] = {};
+                    }
+                    mustRecords[record.member_id][record.date] = record.content;
+                });
+                
+                console.log('Supabase에서 데이터 로드 완료');
+                
+            } catch (error) {
+                console.error('Supabase 데이터 로드 오류:', error);
+                // 기본 데이터로 초기화
+                initializeDefaultData();
+            }
+        }
+
+        // 기본 데이터 초기화
+        function initializeDefaultData() {
+            members = [
+                { id: 'mnj510', name: '오키', code: 'mnj510', isAdmin: true },
+                { id: 'WAKE001', name: '참기름', code: 'WAKE001', isAdmin: false },
+                { id: 'WAKE002', name: '동행', code: 'WAKE002', isAdmin: false },
+                { id: 'WAKE003', name: '완료주의자', code: 'WAKE003', isAdmin: false },
+                { id: 'WAKE004', name: '은호', code: 'WAKE004', isAdmin: false },
+                { id: 'WAKE005', name: '쿼카', code: 'WAKE005', isAdmin: false },
+                { id: 'WAKE006', name: '김은아', code: 'WAKE006', isAdmin: false },
+                { id: 'WAKE007', name: '비채', code: 'WAKE007', isAdmin: false },
+                { id: 'WAKE008', name: '제가이버', code: 'WAKE008', isAdmin: false },
+                { id: 'WAKE009', name: '배소영', code: 'WAKE009', isAdmin: false },
+                { id: 'WAKE010', name: '해량', code: 'WAKE010', isAdmin: false },
+                { id: 'WAKE011', name: '호나인', code: 'WAKE011', isAdmin: false },
+                { id: 'WAKE012', name: '현진', code: 'WAKE012', isAdmin: false },
+                { id: 'WAKE013', name: '박뱅', code: 'WAKE013', isAdmin: false },
+                { id: 'WAKE014', name: '달콩', code: 'WAKE014', isAdmin: false },
+                { id: 'WAKE015', name: '히프노스', code: 'WAKE015', isAdmin: false }
+            ];
+        }
+
         // 멤버별 기상 현황 그리드 업데이트
         function updateMemberCalendarGrid() {
             const memberCalendarHeader = document.getElementById('memberCalendarHeader');
@@ -730,42 +803,82 @@ function calculateScore(memberId, month, year) {
         }
 
 // 기상 체크 처리
-function handleWakeUpCheck() {
+async function handleWakeUpCheck() {
     const now = new Date();
     const hours = now.getHours();
     const today = now.toDateString();
     
     if (hours >= 0 && hours < 5) {
-        if (!checkData[currentUser.id]) {
-            checkData[currentUser.id] = {};
+        try {
+            // Supabase에 기상 체크 데이터 저장
+            const { error } = await supabase
+                .from('check_data')
+                .upsert([{
+                    member_id: currentUser.id,
+                    date: today,
+                    wake_up: true,
+                    frog: checkData[currentUser.id]?.[today]?.frog || false,
+                    must: checkData[currentUser.id]?.[today]?.must || false
+                }]);
+            
+            if (error) throw error;
+            
+            // 로컬 데이터 업데이트
+            if (!checkData[currentUser.id]) {
+                checkData[currentUser.id] = {};
+            }
+            
+            checkData[currentUser.id][today] = {
+                ...checkData[currentUser.id][today],
+                wakeUp: true,
+                wakeUpTime: now.toLocaleTimeString('ko-KR')
+            };
+            
+            alert('기상 체크 완료! 1점 획득했습니다.');
+            updateWakeUpButton();
+            
+        } catch (error) {
+            console.error('기상 체크 저장 오류:', error);
+            alert('기상 체크 저장 중 오류가 발생했습니다.');
         }
-        
-        checkData[currentUser.id][today] = {
-            ...checkData[currentUser.id][today],
-            wakeUp: true,
-            wakeUpTime: now.toLocaleTimeString('ko-KR')
-        };
-        
-        alert('기상 체크 완료! 1점 획득했습니다.');
-        updateWakeUpButton();
     } else {
         alert('기상 체크는 00:00 ~ 04:59 사이에만 가능합니다.');
     }
 }
 
 // 개구리 잡기 처리
-function handleFrogCheck() {
+async function handleFrogCheck() {
     const today = new Date().toDateString();
     const todayData = checkData[currentUser.id]?.[today];
     
     if (todayData?.wakeUp) {
-        checkData[currentUser.id][today] = {
-            ...checkData[currentUser.id][today],
-            frog: true
-        };
-        
-        alert('개구리 잡기 완료! 1점 획득했습니다.');
-        updateWakeUpButton();
+        try {
+            // Supabase에 개구리 잡기 데이터 저장
+            const { error } = await supabase
+                .from('check_data')
+                .upsert([{
+                    member_id: currentUser.id,
+                    date: today,
+                    wake_up: true,
+                    frog: true,
+                    must: checkData[currentUser.id]?.[today]?.must || false
+                }]);
+            
+            if (error) throw error;
+            
+            // 로컬 데이터 업데이트
+            checkData[currentUser.id][today] = {
+                ...checkData[currentUser.id][today],
+                frog: true
+            };
+            
+            alert('개구리 잡기 완료! 1점 획득했습니다.');
+            updateWakeUpButton();
+            
+        } catch (error) {
+            console.error('개구리 잡기 저장 오류:', error);
+            alert('개구리 잡기 저장 중 오류가 발생했습니다.');
+        }
     } else {
         alert('기상 체크를 먼저 완료해주세요.');
     }
@@ -802,7 +915,7 @@ function handleFrogCheck() {
         }
 
         // MUST 기록 저장 (새로운 형식)
-        function saveMustCreation() {
+        async function saveMustCreation() {
             const must1 = document.getElementById('must1').value.trim();
             const must2 = document.getElementById('must2').value.trim();
             const must3 = document.getElementById('must3').value.trim();
@@ -823,23 +936,46 @@ function handleFrogCheck() {
             
             const today = new Date().toDateString();
             
-            if (!mustRecords[currentUser.id]) {
-                mustRecords[currentUser.id] = {};
+            try {
+                // Supabase에 MUST 기록 저장
+                const { error } = await supabase
+                    .from('must_records')
+                    .upsert([{
+                        member_id: currentUser.id,
+                        date: today,
+                        content: JSON.stringify({
+                            type: 'creation',
+                            must: [must1, must2, must3, must4, must5],
+                            frog: [frog1, frog2, frog3],
+                            dailyReview: dailyReview,
+                            timestamp: new Date().toISOString()
+                        })
+                    }]);
+                
+                if (error) throw error;
+                
+                // 로컬 데이터 업데이트
+                if (!mustRecords[currentUser.id]) {
+                    mustRecords[currentUser.id] = {};
+                }
+                
+                mustRecords[currentUser.id][today] = {
+                    type: 'creation',
+                    must: [must1, must2, must3, must4, must5],
+                    frog: [frog1, frog2, frog3],
+                    dailyReview: dailyReview,
+                    timestamp: new Date().toISOString()
+                };
+                
+                alert('MUST 기록이 저장되었습니다! 1점 획득했습니다.');
+                
+                // 폼 초기화
+                clearMustForm();
+                
+            } catch (error) {
+                console.error('MUST 기록 저장 오류:', error);
+                alert('MUST 기록 저장 중 오류가 발생했습니다.');
             }
-            
-            // 새로운 형식으로 저장
-            mustRecords[currentUser.id][today] = {
-                type: 'creation',
-                must: [must1, must2, must3, must4, must5],
-                frog: [frog1, frog2, frog3],
-                dailyReview: dailyReview,
-                timestamp: new Date().toISOString()
-            };
-            
-            alert('MUST 기록이 저장되었습니다! 1점 획득했습니다.');
-            
-            // 폼 초기화
-            clearMustForm();
         }
 
         // MUST 기록 복사 (새로운 형식)
@@ -1056,44 +1192,98 @@ function updateAdminPage() {
 }
 
 // 멤버 추가
-function addMember() {
+async function addMember() {
     const name = document.getElementById('newMemberName').value.trim();
     const code = document.getElementById('newMemberCode').value.trim();
     
-    if (name && code) {
-        // 중복 코드 검사
-        if (members.find(m => m.code === code)) {
-            alert('이미 존재하는 멤버 코드입니다.');
-            return;
-        }
+    if (!name || !code) {
+        alert('멤버 이름과 코드를 모두 입력해주세요.');
+        return;
+    }
+    
+    // 중복 코드 확인
+    if (members.find(m => m.code === code)) {
+        alert('이미 존재하는 멤버 코드입니다.');
+        return;
+    }
+    
+    const newMember = {
+        id: code,
+        name: name,
+        code: code,
+        isAdmin: false
+    };
+    
+    try {
+        // Supabase에 멤버 추가
+        const { error } = await supabase
+            .from('members')
+            .insert([newMember]);
         
-        const newId = `member${Date.now()}`;
-        members.push({
-            id: newId,
-            name: name,
-            code: code
-        });
+        if (error) throw error;
         
-        // 폼 초기화
+        // 로컬 배열에 추가
+        members.push(newMember);
+        
+        // 입력 필드 초기화
         document.getElementById('newMemberName').value = '';
         document.getElementById('newMemberCode').value = '';
         
-        alert('멤버가 추가되었습니다.');
+        // 관리자 페이지 업데이트
         updateAdminPage();
+        
+        alert('새 멤버가 추가되었습니다!');
+        
+    } catch (error) {
+        console.error('멤버 추가 오류:', error);
+        alert('멤버 추가 중 오류가 발생했습니다.');
     }
 }
 
 // 멤버 삭제
-function deleteMember(memberId) {
-    if (confirm('정말로 이 멤버를 삭제하시겠습니까?')) {
+async function deleteMember(memberId) {
+    if (!confirm('정말로 이 멤버를 삭제하시겠습니까?\n관련된 모든 데이터가 함께 삭제됩니다.')) {
+        return;
+    }
+    
+    try {
+        // Supabase에서 멤버 삭제
+        const { error: memberError } = await supabase
+            .from('members')
+            .delete()
+            .eq('id', memberId);
+        
+        if (memberError) throw memberError;
+        
+        // 관련 기상 체크 데이터 삭제
+        const { error: checkError } = await supabase
+            .from('check_data')
+            .delete()
+            .eq('member_id', memberId);
+        
+        if (checkError) throw checkError;
+        
+        // 관련 MUST 기록 삭제
+        const { error: mustError } = await supabase
+            .from('must_records')
+            .delete()
+            .eq('member_id', memberId);
+        
+        if (mustError) throw mustError;
+        
+        // 로컬 배열에서 제거
         members = members.filter(m => m.id !== memberId);
         
         // 관련 데이터도 삭제
         delete checkData[memberId];
         delete mustRecords[memberId];
         
-        alert('멤버가 삭제되었습니다.');
+        alert('멤버와 관련 데이터가 모두 삭제되었습니다.');
         updateAdminPage();
+        
+    } catch (error) {
+        console.error('멤버 삭제 오류:', error);
+        alert('멤버 삭제 중 오류가 발생했습니다.');
     }
 }
 

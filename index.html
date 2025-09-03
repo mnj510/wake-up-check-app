@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>기상 체크 앱</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // lucide 라이브러리 로딩 확인
         window.addEventListener('load', function() {
@@ -338,6 +339,19 @@
                     <h3 class="card-title">등록된 멤버</h3>
                     <div class="member-list" id="memberList">
                         <!-- 멤버 목록이 여기에 동적으로 생성됩니다 -->
+                    </div>
+                </div>
+
+                <!-- 멤버 삭제 -->
+                <div class="card">
+                    <h3 class="card-title">멤버 삭제</h3>
+                    <div class="admin-form">
+                        <select id="deleteMemberSelect" class="elegant-select">
+                            <option value="">삭제할 멤버 선택</option>
+                        </select>
+                        <button class="btn btn-danger" onclick="deleteMember()">
+                            <i data-lucide="user-minus"></i> 삭제
+                        </button>
                     </div>
                 </div>
             </div>
