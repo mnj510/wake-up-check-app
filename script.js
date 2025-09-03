@@ -2501,17 +2501,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // 매일 05:25와 05:26에 분리된 보고서 전송
+        // 매일 05:50과 05:51에 분리된 보고서 전송
         function scheduleDailyReport() {
             const now = new Date();
             
-            // 05:25 (기상 현황)
+            // 05:50 (기상 현황)
             const wakeUpTime = new Date();
-            wakeUpTime.setHours(5, 25, 0, 0);
+            wakeUpTime.setHours(5, 50, 0, 0);
             
-            // 05:26 (개구리 기록)
+            // 05:51 (개구리 기록)
             const frogTime = new Date();
-            frogTime.setHours(5, 26, 0, 0);
+            frogTime.setHours(5, 51, 0, 0);
 
             // 오늘 해당 시간이 지났으면 내일로 설정
             if (now > wakeUpTime) {
@@ -2524,26 +2524,26 @@ document.addEventListener('DOMContentLoaded', function() {
             const timeUntilWakeUp = wakeUpTime.getTime() - now.getTime();
             const timeUntilFrog = frogTime.getTime() - now.getTime();
 
-            // 기상 현황 전송 스케줄링 (05:25)
+            // 기상 현황 전송 스케줄링 (05:50)
             setTimeout(() => {
                 // 첫 번째 기상 현황 전송
                 const wakeUpMessage = formatWakeUpMessage();
                 sendTelegramMessage(wakeUpMessage);
                 
-                // 매일 05:25에 반복 실행
+                // 매일 05:50에 반복 실행
                 setInterval(() => {
                     const dailyWakeUpMessage = formatWakeUpMessage();
                     sendTelegramMessage(dailyWakeUpMessage);
                 }, 24 * 60 * 60 * 1000); // 24시간마다
             }, timeUntilWakeUp);
 
-            // 개구리 기록 전송 스케줄링 (05:26)
+            // 개구리 기록 전송 스케줄링 (05:51)
             setTimeout(() => {
                 // 첫 번째 개구리 기록 전송
                 const frogMessage = formatFrogMessage();
                 sendTelegramMessage(frogMessage);
                 
-                // 매일 05:26에 반복 실행
+                // 매일 05:51에 반복 실행
                 setInterval(() => {
                     const dailyFrogMessage = formatFrogMessage();
                     sendTelegramMessage(dailyFrogMessage);
