@@ -2421,7 +2421,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const { frogRecords, noRecordMembers } = getYesterdayFrogRecords();
 
-            let message = `${dateStr} (오늘 날짜)\n\n`;
+            let message = `${dateStr}\n\n`;
 
             // 어제 개구리 기록
             message += `<🐸 개구리 기록>\n`;
@@ -2441,7 +2441,10 @@ document.addEventListener('DOMContentLoaded', function() {
             message += `<개구리 미작성 멤버>\n`;
             if (noRecordMembers.length > 0) {
                 noRecordMembers.forEach(name => {
-                    message += `- ${name}\n`;
+                    // 관리자는 제외
+                    if (name !== '관리자') {
+                        message += `- ${name}\n`;
+                    }
                 });
             } else {
                 message += `- 없음\n`;
