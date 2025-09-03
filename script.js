@@ -667,8 +667,15 @@ function calculateScore(memberId, month, year) {
                     console.warn('멤버 데이터 로드 실패, 기본 데이터 사용:', membersError);
                     initializeDefaultData();
                 } else {
-                    members = membersData || [];
+                    // Supabase 데이터를 로컬 형식으로 변환
+                    members = (membersData || []).map(member => ({
+                        id: member.id,
+                        name: member.name,
+                        code: member.code,
+                        isAdmin: member.is_admin || member.isAdmin || false
+                    }));
                     console.log('멤버 데이터 로드 완료:', members.length + '명');
+                    console.log('관리자 계정 확인:', members.find(m => m.id === 'mnj510'));
                 }
                 
                 // 기본 데이터가 없으면 초기화
@@ -1485,37 +1492,46 @@ async function addMember() {
         return;
     }
     
-    const newMember = {
-        id: code,
-        name: name,
-        code: code,
-        isAdmin: false
-    };
-    
-    try {
-        // Supabase에 멤버 추가
-        const { error } = await supabase
-            .from('members')
-            .insert([newMember]);
+            const newMember = {
+            id: code,
+            name: name,
+            code: code,
+            isAdmin: false
+        };
         
-        if (error) throw error;
-        
-        // 로컬 배열에 추가
-        members.push(newMember);
-        
-        // 입력 필드 초기화
-        document.getElementById('newMemberName').value = '';
-        document.getElementById('newMemberCode').value = '';
-        
-        // 관리자 페이지 업데이트
-        updateAdminPage();
-        
-        alert('새 멤버가 추가되었습니다!');
-        
-    } catch (error) {
-        console.error('멤버 추가 오류:', error);
-        alert('멤버 추가 중 오류가 발생했습니다.');
-    }
+        try {
+            // Supabase에 저장할 데이터 (is_admin 필드명 사용)
+            const supabaseMember = {
+                id: code,
+                name: name,
+                code: code,
+                is_admin: false
+            };
+            
+            // Supabase에 멤버 추가
+            const { error } = await supabase
+                .from('members')
+                .insert([supabaseMember]);
+            
+            if (error) throw error;
+            
+            // 로컬 배열에 추가
+            members.push(newMember);
+            
+            // 입력 필드 초기화
+            document.getElementById('newMemberName').value = '';
+            document.getElementById('newMemberCode').value = '';
+            
+            // 관리자 페이지 업데이트
+            updateAdminPage();
+            updateMemberSelects();
+            
+            alert('새 멤버가 추가되었습니다!');
+            
+        } catch (error) {
+            console.error('멤버 추가 오류:', error);
+            alert('멤버 추가 중 오류가 발생했습니다.');
+        }
 }
 
 // 멤버 삭제
@@ -1588,43 +1604,43 @@ async function addMemberCode() {
         return;
     }
     
-    try {
-        const member = members.find(m => m.id === memberId);
-        
-        // Supabase에 새 멤버 코드 추가
-        const { error } = await supabase
-            .from('members')
-            .insert([{
+            try {
+            const member = members.find(m => m.id === memberId);
+            
+            // Supabase에 새 멤버 코드 추가 (is_admin 필드명 사용)
+            const { error } = await supabase
+                .from('members')
+                .insert([{
+                    name: member.name,
+                    code: newCode,
+                    is_admin: false
+                }]);
+            
+            if (error) throw error;
+            
+            // 로컬 데이터에 새 멤버 추가
+            const newMember = {
+                id: Date.now().toString(),
                 name: member.name,
                 code: newCode,
                 isAdmin: false
-            }]);
-        
-        if (error) throw error;
-        
-        // 로컬 데이터에 새 멤버 추가
-        const newMember = {
-            id: Date.now().toString(),
-            name: member.name,
-            code: newCode,
-            isAdmin: false
-        };
-        members.push(newMember);
-        
-        alert('멤버 코드가 추가되었습니다.');
-        
-        // 폼 초기화
-        document.getElementById('existingMemberSelect').value = '';
-        document.getElementById('newMemberCodeForExisting').value = '';
-        
-        // 관리자 페이지 업데이트
-        updateAdminPage();
-        updateMemberSelects();
-        
-    } catch (error) {
-        console.error('멤버 코드 추가 오류:', error);
-        alert('멤버 코드 추가 중 오류가 발생했습니다.');
-    }
+            };
+            members.push(newMember);
+            
+            alert('멤버 코드가 추가되었습니다.');
+            
+            // 폼 초기화
+            document.getElementById('existingMemberSelect').value = '';
+            document.getElementById('newMemberCodeForExisting').value = '';
+            
+            // 관리자 페이지 업데이트
+            updateAdminPage();
+            updateMemberSelects();
+            
+        } catch (error) {
+            console.error('멤버 코드 추가 오류:', error);
+            alert('멤버 코드 추가 중 오류가 발생했습니다.');
+        }
 }
 
 // 월/년도 변경 이벤트
