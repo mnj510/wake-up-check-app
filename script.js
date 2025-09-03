@@ -2501,36 +2501,46 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // 매일 05:50과 05:51에 분리된 보고서 전송
+        // 매일 05:01, 05:02, 05:03에 분리된 보고서 전송
         function scheduleDailyReport() {
             console.log('📅 텔레그램 자동 전송 스케줄링 시작...');
             
             const now = new Date();
             console.log('현재 시간:', now.toLocaleString());
             
-            // 05:50 (기상 현황)
+            // 05:01 (기상 현황)
             const wakeUpTime = new Date();
-            wakeUpTime.setHours(5, 50, 0, 0);
+            wakeUpTime.setHours(5, 1, 0, 0);
             
-            // 05:51 (개구리 기록)
+            // 05:02 (개구리 기록)
             const frogTime = new Date();
-            frogTime.setHours(5, 51, 0, 0);
+            frogTime.setHours(5, 2, 0, 0);
+            
+            // 05:03 (멤버 점수 현황)
+            const scoreTime = new Date();
+            scoreTime.setHours(5, 3, 0, 0);
 
             // 오늘 해당 시간이 지났으면 내일로 설정
             if (now > wakeUpTime) {
                 wakeUpTime.setDate(wakeUpTime.getDate() + 1);
-                console.log('오늘 05:50이 지났으므로 내일로 설정');
+                console.log('오늘 05:01이 지났으므로 내일로 설정');
             }
             if (now > frogTime) {
                 frogTime.setDate(frogTime.getDate() + 1);
-                console.log('오늘 05:51이 지났으므로 내일로 설정');
+                console.log('오늘 05:02가 지났으므로 내일로 설정');
+            }
+            if (now > scoreTime) {
+                scoreTime.setDate(scoreTime.getDate() + 1);
+                console.log('오늘 05:03이 지났으므로 내일로 설정');
             }
 
             const timeUntilWakeUp = wakeUpTime.getTime() - now.getTime();
             const timeUntilFrog = frogTime.getTime() - now.getTime();
+            const timeUntilScore = scoreTime.getTime() - now.getTime();
 
             console.log(`⏰ 기상 현황 전송까지: ${Math.floor(timeUntilWakeUp / 1000 / 60)}분 ${Math.floor((timeUntilWakeUp / 1000) % 60)}초`);
             console.log(`⏰ 개구리 기록 전송까지: ${Math.floor(timeUntilFrog / 1000 / 60)}분 ${Math.floor((timeUntilFrog / 1000) % 60)}초`);
+            console.log(`⏰ 멤버 점수 현황 전송까지: ${Math.floor(timeUntilScore / 1000 / 60)}분 ${Math.floor((timeUntilScore / 1000) % 60)}초`);
 
             // 매분마다 시간을 확인하여 정확한 시간에 전송
             const checkAndSend = () => {
@@ -2538,18 +2548,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 const currentHour = currentTime.getHours();
                 const currentMinute = currentTime.getMinutes();
                 
-                // 05:50에 기상 현황 전송
-                if (currentHour === 5 && currentMinute === 50) {
-                    console.log('🚀 05:50 기상 현황 전송 시작!');
+                // 05:01에 기상 현황 전송
+                if (currentHour === 5 && currentMinute === 1) {
+                    console.log('🚀 05:01 기상 현황 전송 시작!');
                     const wakeUpMessage = formatWakeUpMessage();
                     sendTelegramMessage(wakeUpMessage);
                 }
                 
-                // 05:51에 개구리 기록 전송
-                if (currentHour === 5 && currentMinute === 51) {
-                    console.log('🚀 05:51 개구리 기록 전송 시작!');
+                // 05:02에 개구리 기록 전송
+                if (currentHour === 5 && currentMinute === 2) {
+                    console.log('🚀 05:02 개구리 기록 전송 시작!');
                     const frogMessage = formatFrogMessage();
                     sendTelegramMessage(frogMessage);
+                }
+                
+                // 05:03에 멤버 점수 현황 전송
+                if (currentHour === 5 && currentMinute === 3) {
+                    console.log('🚀 05:03 멤버 점수 현황 전송 시작!');
+                    const scoreMessage = formatScoreMessage();
+                    sendTelegramMessage(scoreMessage);
                 }
             };
             
@@ -2563,6 +2580,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             console.log(`📅 다음 기상 현황 전송 예정: ${wakeUpTime.toLocaleString()}`);
             console.log(`📅 다음 개구리 기록 전송 예정: ${frogTime.toLocaleString()}`);
+            console.log(`📅 다음 멤버 점수 현황 전송 예정: ${scoreTime.toLocaleString()}`);
         }
 
         // 수동으로 텔레그램 보고서 전송 (테스트용)
