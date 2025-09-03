@@ -88,11 +88,18 @@ let mustRecords = {};
                 updateWakeUpButton();
                 lastCheckSeconds = seconds;
             }
+            
+            // MUST 시간 가이드 업데이트 (1초마다)
+            if (seconds !== lastMustSeconds) {
+                updateMustTimeGuide();
+                lastMustSeconds = seconds;
+            }
         }
 
         // 마지막 업데이트된 초와 체크 시간을 추적
         let lastSeconds = -1;
         let lastCheckSeconds = -1;
+        let lastMustSeconds = -1;
 
 // 기상 체크 버튼 상태 업데이트
 function updateWakeUpButton() {
@@ -1281,6 +1288,9 @@ async function handleFrogCheck() {
             
             // 페이지 로드 시 날짜 선택기도 즉시 초기화 (MUST 기록 탭용)
             initializeDatePicker();
+            
+            // 시간별 저장 버튼 상태와 안내 메시지 업데이트
+            updateMustTimeGuide();
         }
 
         // MUST 기록 저장 (새로운 형식)
@@ -2272,12 +2282,49 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// MUST 점수 시간창: 20:00 ~ 23:59 (로컬 시간)
-function isWithinMustScoringWindow(dateObj) {
-    try {
-        const h = dateObj.getHours();
-        return h >= 20 && h <= 23; // 20:00 이상 23:59 이하
-    } catch (e) {
-        return false;
-    }
-}
+        // MUST 점수 시간창: 20:00 ~ 23:59 (로컬 시간)
+        function isWithinMustScoringWindow(dateObj) {
+            try {
+                const h = dateObj.getHours();
+                return h >= 20 && h <= 23; // 20:00 이상 23:59 이하
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // MUST 시간별 안내 메시지 및 저장 버튼 상태 업데이트
+        function updateMustTimeGuide() {
+            const saveBtn = document.getElementById('saveMustBtn');
+            const timeMessage = document.getElementById('mustTimeMessage');
+            
+            if (!saveBtn || !timeMessage) return;
+            
+            const now = new Date();
+            const currentHour = now.getHours();
+            const isScoringTime = isWithinMustScoringWindow(now);
+            
+            // 저장 버튼 활성화/비활성화
+            saveBtn.disabled = !isScoringTime;
+            
+            // 시간별 안내 메시지 업데이트
+            if (isScoringTime) {
+                timeMessage.className = 'time-message scoring-time';
+                timeMessage.innerHTML = `
+                    🎯 <span class="time-highlight">20:00 ~ 23:59</span> 점수 획득 시간입니다!<br>
+                    지금 저장하시면 <strong>1점을 획득</strong>할 수 있습니다.
+                `;
+            } else {
+                timeMessage.className = 'time-message non-scoring-time';
+                if (currentHour < 20) {
+                    timeMessage.innerHTML = `
+                        ⏰ <span class="time-highlight">${20 - currentHour}시간 ${59 - now.getMinutes()}분 후</span> 점수 획득 가능!<br>
+                        MUST 기록 저장은 <strong>20:00 ~ 23:59</strong> 사이에만 1점을 획득할 수 있습니다.
+                    `;
+                } else {
+                    timeMessage.innerHTML = `
+                        🌙 오늘 점수 획득 시간이 <span class="time-highlight">종료</span>되었습니다.<br>
+                        MUST 기록 저장은 <strong>20:00 ~ 23:59</strong> 사이에만 1점을 획득할 수 있습니다.
+                    `;
+                }
+            }
+        }
