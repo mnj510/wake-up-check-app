@@ -1239,6 +1239,11 @@ async function handleFrogCheck() {
         function updateMustPage() {
             // 기본적으로 작성 탭을 보여줌
             switchMustTab('creation');
+            
+            // 페이지 로드 시 날짜 선택기도 초기화 (MUST 기록 탭용)
+            setTimeout(() => {
+                initializeDatePicker();
+            }, 100);
         }
 
         // MUST 기록 저장 (새로운 형식)
