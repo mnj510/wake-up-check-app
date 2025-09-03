@@ -1740,52 +1740,76 @@ async function addMember() {
         return;
     }
     
-    // 중복 코드 확인
+    // 중복 코드 확인(로컬)
     if (members.find(m => m.code === code)) {
         alert('이미 존재하는 멤버 코드입니다.');
         return;
     }
     
-            const newMember = {
+    // 중복 코드 확인(Supabase)
+    try {
+        const { data: existRows, error: existErr } = await supabase
+            .from('members')
+            .select('code')
+            .eq('code', code)
+            .limit(1);
+        if (existErr) {
+            console.warn('중복 확인 중 오류:', existErr);
+        } else if (existRows && existRows.length > 0) {
+            alert('이미 Supabase에 같은 멤버 코드가 있습니다. 다른 코드를 사용해주세요.');
+            return;
+        }
+    } catch (e) {
+        console.warn('중복 확인 예외:', e);
+    }
+    
+    const newMember = {
+        id: code,
+        name: name,
+        code: code,
+        isAdmin: false
+    };
+    
+    try {
+        // Supabase에 저장할 데이터 (is_admin 필드명 사용)
+        const supabaseMember = {
             id: code,
             name: name,
             code: code,
-            isAdmin: false
+            is_admin: false
         };
         
-        try {
-            // Supabase에 저장할 데이터 (is_admin 필드명 사용)
-            const supabaseMember = {
-                id: code,
-                name: name,
-                code: code,
-                is_admin: false
-            };
-            
-            // Supabase에 멤버 추가
-            const { error } = await supabase
-                .from('members')
-                .insert([supabaseMember]);
-            
-            if (error) throw error;
-            
-            // 로컬 배열에 추가
-            members.push(newMember);
-            
-            // 입력 필드 초기화
-            document.getElementById('newMemberName').value = '';
-            document.getElementById('newMemberCode').value = '';
-            
-            // 관리자 페이지 업데이트
-            updateAdminPage();
-            updateMemberSelects();
-            
-            alert('새 멤버가 추가되었습니다!');
-            
-        } catch (error) {
-            console.error('멤버 추가 오류:', error);
-            alert('멤버 추가 중 오류가 발생했습니다.');
+        const { error } = await supabase
+            .from('members')
+            .insert([supabaseMember]);
+        
+        if (error) {
+            console.error('멤버 추가 오류(서버):', error);
+            let msg = '멤버 추가 중 오류가 발생했습니다.';
+            if (error.message) msg += `\n- message: ${error.message}`;
+            if (error.details) msg += `\n- details: ${error.details}`;
+            if (error.hint) msg += `\n- hint: ${error.hint}`;
+            alert(msg);
+            return;
         }
+        
+        // 로컬 배열에 추가
+        members.push(newMember);
+        
+        // 입력 필드 초기화
+        document.getElementById('newMemberName').value = '';
+        document.getElementById('newMemberCode').value = '';
+        
+        // 관리자 페이지/셀렉트 갱신
+        updateAdminPage();
+        updateMemberSelects();
+        
+        alert('새 멤버가 추가되었습니다!');
+        
+    } catch (error) {
+        console.error('멤버 추가 오류(클라이언트 예외):', error);
+        alert(`멤버 추가 중 오류가 발생했습니다.\n${error?.message || error}`);
+    }
 }
 
 // 멤버 삭제
