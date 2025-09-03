@@ -2388,7 +2388,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const { completedMembers, failedMembers } = getWakeUpStatus();
 
-            let message = `${dateStr} (오늘 날짜)\n\n`;
+            let message = `${dateStr}\n\n`;
 
             // 기상 현황
             message += `<기상 완료 멤버>\n`;
@@ -2650,12 +2650,13 @@ document.addEventListener('DOMContentLoaded', function() {
                            String(now.getMonth() + 1).padStart(2, '0') + 
                            String(now.getDate()).padStart(2, '0');
             
-            const selectedMonth = parseInt(document.getElementById('monthSelect').value);
-            const selectedYear = parseInt(document.getElementById('yearSelect').value);
+            // 현재 달과 년도 사용 (선택된 월이 아닌)
+            const currentMonth = now.getMonth() + 1;
+            const currentYear = now.getFullYear();
             
-            // 모든 멤버의 점수 계산
+            // 모든 멤버의 점수 계산 (현재 달 기준)
             const memberScores = members.map(member => {
-                const score = calculateScore(member.id, selectedMonth, selectedYear);
+                const score = calculateScore(member.id, currentMonth, currentYear);
                 return {
                     name: member.name,
                     score: score
@@ -2672,7 +2673,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const bottom30 = memberScores.slice(top70Count);
             
             let message = `<멤버 점수 현황>\n\n`;
-            message += `${selectedMonth}월 (${dateStr} 기준)\n\n`;
+            message += `${currentMonth}월 (${dateStr} 기준)\n\n`;
             
             // 상위 70%
             message += `<상위 70%>\n`;
