@@ -2503,7 +2503,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 매일 05:50과 05:51에 분리된 보고서 전송
         function scheduleDailyReport() {
+            console.log('📅 텔레그램 자동 전송 스케줄링 시작...');
+            
             const now = new Date();
+            console.log('현재 시간:', now.toLocaleString());
             
             // 05:50 (기상 현황)
             const wakeUpTime = new Date();
@@ -2516,42 +2519,50 @@ document.addEventListener('DOMContentLoaded', function() {
             // 오늘 해당 시간이 지났으면 내일로 설정
             if (now > wakeUpTime) {
                 wakeUpTime.setDate(wakeUpTime.getDate() + 1);
+                console.log('오늘 05:50이 지났으므로 내일로 설정');
             }
             if (now > frogTime) {
                 frogTime.setDate(frogTime.getDate() + 1);
+                console.log('오늘 05:51이 지났으므로 내일로 설정');
             }
 
             const timeUntilWakeUp = wakeUpTime.getTime() - now.getTime();
             const timeUntilFrog = frogTime.getTime() - now.getTime();
 
-            // 기상 현황 전송 스케줄링 (05:50)
-            setTimeout(() => {
-                // 첫 번째 기상 현황 전송
-                const wakeUpMessage = formatWakeUpMessage();
-                sendTelegramMessage(wakeUpMessage);
-                
-                // 매일 05:50에 반복 실행
-                setInterval(() => {
-                    const dailyWakeUpMessage = formatWakeUpMessage();
-                    sendTelegramMessage(dailyWakeUpMessage);
-                }, 24 * 60 * 60 * 1000); // 24시간마다
-            }, timeUntilWakeUp);
+            console.log(`⏰ 기상 현황 전송까지: ${Math.floor(timeUntilWakeUp / 1000 / 60)}분 ${Math.floor((timeUntilWakeUp / 1000) % 60)}초`);
+            console.log(`⏰ 개구리 기록 전송까지: ${Math.floor(timeUntilFrog / 1000 / 60)}분 ${Math.floor((timeUntilFrog / 1000) % 60)}초`);
 
-            // 개구리 기록 전송 스케줄링 (05:51)
-            setTimeout(() => {
-                // 첫 번째 개구리 기록 전송
-                const frogMessage = formatFrogMessage();
-                sendTelegramMessage(frogMessage);
+            // 매분마다 시간을 확인하여 정확한 시간에 전송
+            const checkAndSend = () => {
+                const currentTime = new Date();
+                const currentHour = currentTime.getHours();
+                const currentMinute = currentTime.getMinutes();
                 
-                // 매일 05:51에 반복 실행
-                setInterval(() => {
-                    const dailyFrogMessage = formatFrogMessage();
-                    sendTelegramMessage(dailyFrogMessage);
-                }, 24 * 60 * 60 * 1000); // 24시간마다
-            }, timeUntilFrog);
+                // 05:50에 기상 현황 전송
+                if (currentHour === 5 && currentMinute === 50) {
+                    console.log('🚀 05:50 기상 현황 전송 시작!');
+                    const wakeUpMessage = formatWakeUpMessage();
+                    sendTelegramMessage(wakeUpMessage);
+                }
+                
+                // 05:51에 개구리 기록 전송
+                if (currentHour === 5 && currentMinute === 51) {
+                    console.log('🚀 05:51 개구리 기록 전송 시작!');
+                    const frogMessage = formatFrogMessage();
+                    sendTelegramMessage(frogMessage);
+                }
+            };
+            
+            // 즉시 한 번 실행하여 현재 상태 확인
+            checkAndSend();
+            
+            // 매분마다 시간 확인 (더 안정적인 스케줄링)
+            setInterval(checkAndSend, 60 * 1000); // 1분마다
+            
+            console.log('✅ 매분마다 시간 확인하여 정확한 시간에 전송하도록 설정됨');
 
-            console.log(`다음 기상 현황 전송 예정: ${wakeUpTime.toLocaleString()}`);
-            console.log(`다음 개구리 기록 전송 예정: ${frogTime.toLocaleString()}`);
+            console.log(`📅 다음 기상 현황 전송 예정: ${wakeUpTime.toLocaleString()}`);
+            console.log(`📅 다음 개구리 기록 전송 예정: ${frogTime.toLocaleString()}`);
         }
 
         // 수동으로 텔레그램 보고서 전송 (테스트용)
