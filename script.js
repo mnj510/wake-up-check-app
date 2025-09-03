@@ -1,12 +1,24 @@
 // 앱 상태
 let currentUser = null;
 let currentPage = 'dashboard';
-let members = [
-    { id: 'mnj510', name: '관리자', code: 'mnj510', isAdmin: true },
-    { id: 'member1', name: '김철수', code: 'WAKE001' },
-    { id: 'member2', name: '이영희', code: 'WAKE002' },
-    { id: 'member3', name: '박민수', code: 'WAKE003' }
-];
+        let members = [
+            { id: 'mnj510', name: '오키', code: 'mnj510', isAdmin: true },
+            { id: 'member1', name: '참기름', code: 'WAKE001' },
+            { id: 'member2', name: '동행', code: 'WAKE002' },
+            { id: 'member3', name: '완료주의자', code: 'WAKE003' },
+            { id: 'member4', name: '은호', code: 'WAKE004' },
+            { id: 'member5', name: '쿼카', code: 'WAKE005' },
+            { id: 'member6', name: '김은아', code: 'WAKE006' },
+            { id: 'member7', name: '비채', code: 'WAKE007' },
+            { id: 'member8', name: '제가이버', code: 'WAKE008' },
+            { id: 'member9', name: '배소영', code: 'WAKE009' },
+            { id: 'member10', name: '해량', code: 'WAKE010' },
+            { id: 'member11', name: '호나인', code: 'WAKE011' },
+            { id: 'member12', name: '현진', code: 'WAKE012' },
+            { id: 'member13', name: '박뱅', code: 'WAKE013' },
+            { id: 'member14', name: '달콩', code: 'WAKE014' },
+            { id: 'member15', name: '히프노스', code: 'WAKE015' }
+        ];
 
 // 데이터 저장 (실제로는 Supabase 등 DB 사용)
 let checkData = {};
@@ -20,9 +32,9 @@ let mustRecords = {};
             // 시계를 100ms마다 업데이트하여 부드러운 카운터 효과
             setInterval(updateClock, 100);
             
-            // 현재 월로 설정
-            const now = new Date();
-            document.getElementById('monthSelect').value = now.getMonth() + 1;
+            // 2025년 9월부터 시작하도록 설정
+            document.getElementById('yearSelect').value = '2025';
+            document.getElementById('monthSelect').value = '9';
             
             // 날짜 제목 업데이트
             updateDateTitles();
@@ -325,7 +337,7 @@ function showPage(pageName) {
             
             let statsHTML = '';
             
-            // 오늘 날짜 카드 (월/일 형태로 변경)
+            // 이번 달 카드
             statsHTML += `
                 <div class="stat-card">
                     <div class="stat-content">
@@ -333,126 +345,130 @@ function showPage(pageName) {
                             <i data-lucide="calendar"></i>
                         </div>
                         <div class="stat-info">
-                            <h3>오늘</h3>
-                            <p>${today.getMonth() + 1} / ${today.getDate()}</p>
+                            <h3>이번 달</h3>
+                            <p>${selectedMonth}월</p>
                         </div>
                     </div>
                 </div>
             `;
     
-    if (currentUser.isAdmin) {
-        // 관리자용 통계
-        const allStats = getAllStats(selectedMonth, selectedYear);
-        
-        statsHTML += `
-            <div class="stat-card">
-                <div class="stat-content">
-                    <div class="stat-icon green">
-                        <i data-lucide="users"></i>
+                if (currentUser.isAdmin) {
+                // 관리자용 통계
+                const allStats = getAllStats(selectedMonth, selectedYear);
+                
+                statsHTML += `
+                    <div class="stat-card">
+                        <div class="stat-content">
+                            <div class="stat-icon green">
+                                <i data-lucide="users"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>전체 멤버</h3>
+                                <p>${allStats.totalMembers}명</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="stat-info">
-                        <h3>전체 멤버</h3>
-                        <p>${allStats.totalMembers}명</p>
+                    
+                    <div class="stat-card">
+                        <div class="stat-content">
+                            <div class="stat-icon blue">
+                                <i data-lucide="check-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>전체 기상률</h3>
+                                <p>${allStats.totalWakeUpRate}%</p>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-content">
-                    <div class="stat-icon blue">
-                        <i data-lucide="check-circle"></i>
+                    
+                    <div class="stat-card">
+                        <div class="stat-content">
+                            <div class="stat-icon yellow">
+                                <i data-lucide="trophy"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>전체 점수</h3>
+                                <p>${allStats.totalScore}점</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="stat-info">
-                        <h3>전체 기상률</h3>
-                        <p>${allStats.totalWakeUpRate}%</p>
+                `;
+            } else {
+                // 멤버용 통계
+                const memberStats = getMemberStats(currentUser.id, selectedMonth, selectedYear);
+                
+                statsHTML += `
+                    <div class="stat-card">
+                        <div class="stat-content">
+                            <div class="stat-icon blue">
+                                <i data-lucide="check-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>기상 완료</h3>
+                                <p>${memberStats.wakeUpSuccess}일</p>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-content">
-                    <div class="stat-icon yellow">
-                        <i data-lucide="trophy"></i>
+                    
+                    <div class="stat-card">
+                        <div class="stat-content">
+                            <div class="stat-icon red">
+                                <i data-lucide="x-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>기상 실패</h3>
+                                <p>${memberStats.wakeUpFailure}일</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="stat-info">
-                        <h3>전체 점수</h3>
-                        <p>${allStats.totalScore}점</p>
+                    
+                    <div class="stat-card">
+                        <div class="stat-content">
+                            <div class="stat-icon yellow">
+                                <i data-lucide="trophy"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>총 점수</h3>
+                                <p>${memberStats.totalScore}점</p>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-        `;
-    } else {
-        // 멤버용 통계
-        const memberStats = getMemberStats(currentUser.id, selectedMonth, selectedYear);
-        
-        statsHTML += `
-            <div class="stat-card">
-                <div class="stat-content">
-                    <div class="stat-icon blue">
-                        <i data-lucide="check-circle"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3>기상 성공</h3>
-                        <p>${memberStats.wakeUpSuccess}일</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-content">
-                    <div class="stat-icon green">
-                        <i data-lucide="award"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3>기상률</h3>
-                        <p>${memberStats.wakeUpRate}%</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-content">
-                    <div class="stat-icon yellow">
-                        <i data-lucide="trophy"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3>총 점수</h3>
-                        <p>${memberStats.totalScore}점</p>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
+                `;
+            }
     
     statsGrid.innerHTML = statsHTML;
     lucide.createIcons();
 }
 
-// 개별 멤버 통계 계산
-function getMemberStats(memberId, month, year) {
-    const memberCheckData = checkData[memberId] || {};
-    let wakeUpSuccess = 0;
-    let totalDays = 0;
-    
-    // 해당 월의 모든 날짜 확인
-    for (let day = 1; day <= 31; day++) {
-        const date = new Date(year, month - 1, day);
-        if (date.getMonth() + 1 !== month) break;
-        if (date > new Date()) break;
-        
-        totalDays++;
-        const dateStr = date.toDateString();
-        if (memberCheckData[dateStr]?.wakeUp) {
-            wakeUpSuccess++;
+        // 개별 멤버 통계 계산
+        function getMemberStats(memberId, month, year) {
+            const memberCheckData = checkData[memberId] || {};
+            let wakeUpSuccess = 0;
+            let wakeUpFailure = 0;
+            let totalDays = 0;
+            
+            // 해당 월의 모든 날짜 확인
+            for (let day = 1; day <= 31; day++) {
+                const date = new Date(year, month - 1, day);
+                if (date.getMonth() + 1 !== month) break;
+                if (date > new Date()) break;
+                
+                totalDays++;
+                const dateStr = date.toDateString();
+                if (memberCheckData[dateStr]?.wakeUp) {
+                    wakeUpSuccess++;
+                } else {
+                    wakeUpFailure++;
+                }
+            }
+            
+            return {
+                wakeUpSuccess,
+                wakeUpFailure,
+                wakeUpRate: totalDays > 0 ? Math.round((wakeUpSuccess / totalDays) * 100) : 0,
+                totalScore: calculateScore(memberId, month, year)
+            };
         }
-    }
-    
-    return {
-        wakeUpSuccess,
-        wakeUpRate: totalDays > 0 ? Math.round((wakeUpSuccess / totalDays) * 100) : 0,
-        totalScore: calculateScore(memberId, month, year)
-    };
-}
 
 // 전체 통계 계산 (관리자용)
 function getAllStats(month, year) {
@@ -535,6 +551,9 @@ function calculateScore(memberId, month, year) {
             calendarHTML += '<div class="calendar-row">';
             calendarHTML += '<div class="member-name">기상</div>';
             
+            let successCount = 0;
+            let failureCount = 0;
+            
             for (let day = 1; day <= 31; day++) {
                 const date = new Date(selectedYear, selectedMonth - 1, day);
                 if (date.getMonth() + 1 !== selectedMonth) break;
@@ -542,24 +561,37 @@ function calculateScore(memberId, month, year) {
                 const dateStr = date.toDateString();
                 const dayData = checkData[currentUser.id]?.[dateStr];
                 const mustData = mustRecords[currentUser.id]?.[dateStr];
+                const today = new Date();
                 
                 let cellClass = '';
                 let cellContent = '';
                 
-                if (dayData?.wakeUp && dayData?.frog && mustData) {
+                // 미래 날짜는 빈칸으로 표시
+                if (date > today) {
+                    cellClass = 'future';
+                    cellContent = '';
+                } else if (dayData?.wakeUp) {
+                    // 기상 성공 (파란색)
                     cellClass = 'success';
-                    cellContent = '✓';
-                } else if (dayData?.wakeUp || dayData?.frog || mustData) {
-                    cellClass = 'partial';
-                    cellContent = '○';
+                    cellContent = '';
+                    successCount++;
                 } else {
+                    // 기상 실패 (빨간색)
                     cellClass = 'failure';
-                    cellContent = '✗';
+                    cellContent = '';
+                    failureCount++;
                 }
                 
                 calendarHTML += `<div class="calendar-cell ${cellClass}">${cellContent}</div>`;
             }
             calendarHTML += '</div>';
+            
+            // 요약 정보 추가
+            calendarHTML += `
+                <div class="calendar-summary">
+                    <p>이번 달 나의 기상 완료: <strong>${successCount}회</strong> / 실패: <strong>${failureCount}회</strong></p>
+                </div>
+            `;
             
             personalCalendar.innerHTML = calendarHTML;
         }
@@ -595,20 +627,23 @@ function calculateScore(memberId, month, year) {
                     
                     const dateStr = date.toDateString();
                     const dayData = checkData[member.id]?.[dateStr];
-                    const mustData = mustRecords[member.id]?.[dateStr];
+                    const today = new Date();
                     
                     let cellClass = '';
                     let cellContent = '';
                     
-                    if (dayData?.wakeUp && dayData?.frog && mustData) {
+                    // 미래 날짜는 빈칸으로 표시
+                    if (date > today) {
+                        cellClass = 'future';
+                        cellContent = '';
+                    } else if (dayData?.wakeUp) {
+                        // 기상 성공 (파란색)
                         cellClass = 'success';
-                        cellContent = '✓';
-                    } else if (dayData?.wakeUp || dayData?.frog || mustData) {
-                        cellClass = 'partial';
-                        cellContent = '○';
+                        cellContent = '';
                     } else {
+                        // 기상 실패 (빨간색)
                         cellClass = 'failure';
-                        cellContent = '✗';
+                        cellContent = '';
                     }
                     
                     gridHTML += `<div class="calendar-cell ${cellClass}">${cellContent}</div>`;

@@ -996,6 +996,33 @@ h1 {
             color: #e65100;
         }
 
+        .calendar-cell.future {
+            background: #f8f9fa;
+            border-color: #dee2e6;
+            color: transparent;
+        }
+
+        /* 달력 요약 정보 */
+        .calendar-summary {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border-radius: 12px;
+            border: 1px solid rgba(25,118,210,0.1);
+            text-align: center;
+        }
+
+        .calendar-summary p {
+            margin: 0;
+            color: #495057;
+            font-weight: 500;
+        }
+
+        .calendar-summary strong {
+            color: #1976d2;
+            font-weight: 700;
+        }
+
 /* 숨김/표시 클래스 */
 .hidden {
     display: none !important;
