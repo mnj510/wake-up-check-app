@@ -246,6 +246,16 @@ function updateDateTitles() {
             
             if (adminId === 'mnj510' && adminPassword === 'asdf6014!!') {
                 currentUser = members.find(m => m.id === 'mnj510');
+                
+                if (!currentUser) {
+                    alert('관리자 계정을 찾을 수 없습니다. 기본 데이터를 초기화합니다.');
+                    initializeDefaultData();
+                    currentUser = members.find(m => m.id === 'mnj510');
+                }
+                
+                console.log('관리자 로그인 성공:', currentUser);
+                console.log('isAdmin 값:', currentUser.isAdmin);
+                
                 loginSuccess();
             } else {
                 alert('올바른 관리자 정보를 입력해주세요.');
@@ -259,8 +269,14 @@ function updateDateTitles() {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('appScreen').style.display = 'block';
             
+            console.log('로그인 성공 함수 실행');
+            console.log('currentUser:', currentUser);
+            console.log('currentUser.isAdmin:', currentUser.isAdmin);
+            console.log('typeof currentUser.isAdmin:', typeof currentUser.isAdmin);
+            
             // 관리자 여부에 따른 UI 설정
-            if (currentUser.isAdmin) {
+            if (currentUser.isAdmin === true) {
+                console.log('관리자로 인식됨 - UI 설정 중...');
                 document.getElementById('userInfo').textContent = `${currentUser.name}님 (관리자)`;
                 document.getElementById('adminTab').classList.remove('hidden');
                 
@@ -271,6 +287,7 @@ function updateDateTitles() {
                 // 멤버 선택 드롭다운 초기화
                 updateMemberSelects();
             } else {
+                console.log('일반 사용자로 인식됨 - UI 설정 중...');
                 document.getElementById('userInfo').textContent = `${currentUser.name}님 환영합니다`;
                 document.getElementById('adminTab').classList.add('hidden');
                 
@@ -753,6 +770,10 @@ function calculateScore(memberId, month, year) {
                 { id: 'WAKE014', name: '달콩', code: 'WAKE014', isAdmin: false },
                 { id: 'WAKE015', name: '히프노스', code: 'WAKE015', isAdmin: false }
             ];
+            
+            console.log('기본 데이터 초기화 완료');
+            console.log('관리자 계정:', members.find(m => m.id === 'mnj510'));
+            console.log('관리자 isAdmin 값:', members.find(m => m.id === 'mnj510')?.isAdmin);
         }
 
         // 멤버 선택 드롭다운 업데이트
