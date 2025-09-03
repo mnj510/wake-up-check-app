@@ -580,14 +580,27 @@ function calculateScore(memberId, month, year) {
         }
     });
     
-    // MUST 기록에서 점수 계산
+    // MUST 기록에서 점수 계산 (20:00~23:59 작성만 1점)
     Object.keys(memberMustData).forEach(date => {
         const dateObj = new Date(date);
         if (dateObj.getMonth() + 1 === month && dateObj.getFullYear() === year) {
             // 미래 날짜는 제외
             if (dateObj > today) return;
-            
-            score += 1;
+            const record = memberMustData[date];
+            if (record && typeof record === 'object') {
+                if (record.timestamp) {
+                    const ts = new Date(record.timestamp);
+                    if (isWithinMustScoringWindow(ts)) {
+                        score += 1;
+                    }
+                } else {
+                    // 과거(타임스탬프 없는) 데이터는 호환성 위해 1점 처리
+                    score += 1;
+                }
+            } else if (record) {
+                // 문자열 등 구형 포맷도 1점 처리
+                score += 1;
+            }
         }
     });
     
@@ -601,6 +614,10 @@ function calculateScore(memberId, month, year) {
     }).filter(date => memberCheckData[date]?.frog).length}일, MUST: ${Object.keys(memberMustData).filter(date => {
         const dateObj = new Date(date);
         return dateObj.getMonth() + 1 === month && dateObj.getFullYear() === year && dateObj <= today;
+    }).filter(date => {
+        const r = memberMustData[date];
+        if (r?.timestamp) return isWithinMustScoringWindow(new Date(r.timestamp));
+        return true; // 구형 데이터 호환
     }).length}일`);
     
     return score;
@@ -1245,6 +1262,8 @@ async function handleFrogCheck() {
             }
             
             const today = new Date().toDateString();
+            const now = new Date();
+            const isScoringTime = isWithinMustScoringWindow(now);
             
             try {
                 console.log('MUST 기록 저장 시작...');
@@ -1255,7 +1274,7 @@ async function handleFrogCheck() {
                     must: [must1, must2, must3, must4, must5],
                     frog: [frog1, frog2, frog3],
                     dailyReview: dailyReview,
-                    timestamp: new Date().toISOString()
+                    timestamp: now.toISOString()
                 };
                 
                 console.log('저장할 데이터:', recordData);
@@ -1285,7 +1304,11 @@ async function handleFrogCheck() {
                 
                 mustRecords[currentUser.id][today] = recordData;
                 
-                alert('MUST 기록이 저장되었습니다! 1점 획득했습니다.');
+                if (isScoringTime) {
+                    alert('MUST 기록이 저장되었습니다! (20:00~23:59 작성 → 1점)');
+                } else {
+                    alert('MUST 기록이 저장되었습니다! (점수는 20:00~23:59 작성 시에만 부여됩니다)');
+                }
                 
                 // 폼 초기화
                 clearMustForm();
@@ -1314,7 +1337,7 @@ async function handleFrogCheck() {
                     must: [must1, must2, must3, must4, must5],
                     frog: [frog1, frog2, frog3],
                     dailyReview: dailyReview,
-                    timestamp: new Date().toISOString()
+                    timestamp: now.toISOString()
                 };
             }
         }
@@ -1610,7 +1633,9 @@ async function handleFrogCheck() {
                 document.getElementById('frogEdit3').value.trim()
             ];
             const dailyReview = document.getElementById('dailyReviewEdit').value.trim();
-            const recordData = { type: 'creation', must, frog, dailyReview, timestamp: new Date().toISOString() };
+            const existing = mustRecords[currentUser.id]?.[dateStr];
+            const keepTimestamp = existing?.timestamp || new Date().toISOString();
+            const recordData = { type: 'creation', must, frog, dailyReview, timestamp: keepTimestamp };
             try {
                 const { error } = await supabase
                     .from('must_records')
@@ -1618,7 +1643,7 @@ async function handleFrogCheck() {
                 if (error) throw error;
                 if (!mustRecords[currentUser.id]) mustRecords[currentUser.id] = {};
                 mustRecords[currentUser.id][dateStr] = recordData;
-                alert('수정이 저장되었습니다. (점수 변화 없음)');
+                alert('수정이 저장되었습니다. (점수는 20:00~23:59 작성 기준으로 계산됩니다)');
                 loadMustRecord();
             } catch (e) {
                 console.error('본인 MUST 수정 저장 오류:', e);
@@ -1648,19 +1673,18 @@ async function handleFrogCheck() {
                 document.getElementById('frogEdit3').value.trim()
             ];
             const dailyReview = document.getElementById('dailyReviewEdit').value.trim();
-            
-            const recordData = { type: 'creation', must, frog, dailyReview, timestamp: new Date().toISOString() };
+            const existing = mustRecords[selectedMember]?.[dateStr];
+            const keepTimestamp = existing?.timestamp || new Date().toISOString();
+            const recordData = { type: 'creation', must, frog, dailyReview, timestamp: keepTimestamp };
             
             try {
                 const { error } = await supabase
                     .from('must_records')
                     .upsert([{ member_id: selectedMember, date: dateStr, content: recordData }], { onConflict: 'member_id,date' });
                 if (error) throw error;
-                
                 if (!mustRecords[selectedMember]) mustRecords[selectedMember] = {};
                 mustRecords[selectedMember][dateStr] = recordData;
-                
-                alert('수정 사항이 저장되었습니다.');
+                alert('수정이 저장되었습니다. (점수는 20:00~23:59 작성 기준으로 계산됩니다)');
                 loadMustRecord();
             } catch (e) {
                 console.error('MUST 기록 수정 저장 오류:', e);
@@ -2178,3 +2202,13 @@ document.addEventListener('DOMContentLoaded', function() {
         monthSelect.addEventListener('change', updateDashboard);
     }
 });
+
+// MUST 점수 시간창: 20:00 ~ 23:59 (로컬 시간)
+function isWithinMustScoringWindow(dateObj) {
+    try {
+        const h = dateObj.getHours();
+        return h >= 20 && h <= 23; // 20:00 이상 23:59 이하
+    } catch (e) {
+        return false;
+    }
+}
