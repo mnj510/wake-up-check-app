@@ -12,40 +12,75 @@ let members = [
 let checkData = {};
 let mustRecords = {};
 
-// 초기화
-document.addEventListener('DOMContentLoaded', function() {
-    lucide.createIcons();
-    updateClock();
-    setInterval(updateClock, 1000);
-    
-    // 현재 월로 설정
-    const now = new Date();
-    document.getElementById('monthSelect').value = now.getMonth() + 1;
-    
-    // 날짜 제목 업데이트
-    updateDateTitles();
-});
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+            updateClock();
+            
+            // 시계를 100ms마다 업데이트하여 부드러운 카운터 효과
+            setInterval(updateClock, 100);
+            
+            // 현재 월로 설정
+            const now = new Date();
+            document.getElementById('monthSelect').value = now.getMonth() + 1;
+            
+            // 날짜 제목 업데이트
+            updateDateTitles();
+        });
 
-// 시계 업데이트
-function updateClock() {
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('ko-KR');
-    const dateStr = now.toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: 'long', 
-        day: 'numeric',
-        weekday: 'long'
-    });
-    
-    const timeElement = document.getElementById('currentTime');
-    const dateElement = document.getElementById('currentDate');
-    
-    if (timeElement) timeElement.textContent = timeStr;
-    if (dateElement) dateElement.textContent = dateStr;
-    
-    // 기상 체크 가능 시간 확인
-    updateWakeUpButton();
-}
+        // 시계 업데이트
+        function updateClock() {
+            const now = new Date();
+            
+            // 시간을 HH:MM:SS 형태로 포맷팅
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const milliseconds = Math.floor(now.getMilliseconds() / 100);
+            const timeStr = `${hours}:${minutes}:${seconds}.${milliseconds}`;
+            
+            // 날짜를 한국어로 포맷팅
+            const dateStr = now.toLocaleDateString('ko-KR', {
+                year: 'numeric',
+                month: 'long', 
+                day: 'numeric',
+                weekday: 'long'
+            });
+            
+            const timeElement = document.getElementById('currentTime');
+            const dateElement = document.getElementById('currentDate');
+            
+            if (timeElement) {
+                timeElement.textContent = timeStr;
+                
+                // 밀리초 단위로 부드러운 깜빡임 효과
+                const opacity = 0.9 + (milliseconds * 0.1);
+                timeElement.style.opacity = opacity;
+                
+                // 초가 바뀔 때마다 강조 효과
+                if (seconds !== lastSeconds) {
+                    timeElement.style.transform = 'scale(1.05)';
+                    setTimeout(() => {
+                        if (timeElement) {
+                            timeElement.style.transform = 'scale(1)';
+                        }
+                    }, 150);
+                    lastSeconds = seconds;
+                }
+            }
+            
+            if (dateElement) dateElement.textContent = dateStr;
+            
+            // 기상 체크 가능 시간 확인 (1초마다만)
+            if (seconds !== lastCheckSeconds) {
+                updateWakeUpButton();
+                lastCheckSeconds = seconds;
+            }
+        }
+
+        // 마지막 업데이트된 초와 체크 시간을 추적
+        let lastSeconds = -1;
+        let lastCheckSeconds = -1;
 
 // 기상 체크 버튼 상태 업데이트
 function updateWakeUpButton() {
