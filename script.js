@@ -1230,8 +1230,12 @@ async function handleFrogCheck() {
             } else if (tabName === 'record') {
                 recordTab.classList.remove('hidden');
                 recordBtn.classList.add('active');
-                // 날짜 선택기 초기화
-                initializeDatePicker();
+                
+                // MUST 기록 탭으로 전환 시 날짜 선택기 강제 초기화
+                setTimeout(() => {
+                    console.log('MUST 기록 탭으로 전환 - 날짜 선택기 초기화 시작');
+                    initializeDatePicker();
+                }, 100);
             }
         }
 
@@ -1436,13 +1440,15 @@ async function handleFrogCheck() {
         // 날짜 선택기 초기화
         function initializeDatePicker() {
             const datePicker = document.getElementById('recordDatePicker');
+            if (!datePicker) {
+                console.warn('recordDatePicker를 찾을 수 없습니다.');
+                return;
+            }
+            
             const today = new Date();
             
             // 오늘 날짜를 기본값으로 설정
             datePicker.value = today.toISOString().split('T')[0];
-            
-            // 오늘 날짜의 기록이 있으면 자동으로 로드
-            loadMustRecord();
             
             // 날짜 선택기 최소값을 2025년 9월로 설정
             const minDate = new Date(2025, 8, 1); // 9월은 8 (0부터 시작)
@@ -1450,6 +1456,15 @@ async function handleFrogCheck() {
             
             // 날짜 선택기 최대값을 오늘로 설정 (미래 날짜 선택 방지)
             datePicker.max = today.toISOString().split('T')[0];
+            
+            console.log('날짜 선택기 초기화 완료:', {
+                value: datePicker.value,
+                min: datePicker.min,
+                max: datePicker.max
+            });
+            
+            // 오늘 날짜의 기록이 있으면 자동으로 로드
+            loadMustRecord();
         }
 
         // 선택된 날짜의 MUST 기록 로드
