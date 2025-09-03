@@ -1235,6 +1235,18 @@ async function handleFrogCheck() {
                 setTimeout(() => {
                     console.log('MUST 기록 탭으로 전환 - 날짜 선택기 초기화 시작');
                     initializeDatePicker();
+                    
+                    // 추가로 한 번 더 초기화하여 확실하게 적용
+                    setTimeout(() => {
+                        const datePicker = document.getElementById('recordDatePicker');
+                        if (datePicker) {
+                            const today = new Date();
+                            const todayString = today.toISOString().split('T')[0];
+                            datePicker.value = todayString;
+                            datePicker.setAttribute('value', todayString);
+                            console.log('날짜 선택기 재초기화 완료:', datePicker.value);
+                        }
+                    }, 200);
                 }, 100);
             }
         }
@@ -1321,11 +1333,6 @@ async function handleFrogCheck() {
                 
                 // 폼 초기화
                 clearMustForm();
-                
-                // 저장 완료 후 MUST 기록 탭으로 자동 전환하여 오늘 저장된 기록 표시
-                setTimeout(() => {
-                    switchMustTab('record');
-                }, 500);
                 
             } catch (error) {
                 console.error('MUST 기록 저장 오류:', error);
@@ -1446,21 +1453,30 @@ async function handleFrogCheck() {
             }
             
             const today = new Date();
+            const todayString = today.toISOString().split('T')[0];
             
-            // 오늘 날짜를 기본값으로 설정
-            datePicker.value = today.toISOString().split('T')[0];
+            // 오늘 날짜를 기본값으로 강제 설정
+            datePicker.value = todayString;
             
             // 날짜 선택기 최소값을 2025년 9월로 설정
             const minDate = new Date(2025, 8, 1); // 9월은 8 (0부터 시작)
             datePicker.min = minDate.toISOString().split('T')[0];
             
             // 날짜 선택기 최대값을 오늘로 설정 (미래 날짜 선택 방지)
-            datePicker.max = today.toISOString().split('T')[0];
+            datePicker.max = todayString;
+            
+            // DOM 속성도 직접 설정하여 확실하게 적용
+            datePicker.setAttribute('value', todayString);
+            datePicker.setAttribute('min', minDate.toISOString().split('T')[0]);
+            datePicker.setAttribute('max', todayString);
             
             console.log('날짜 선택기 초기화 완료:', {
                 value: datePicker.value,
                 min: datePicker.min,
-                max: datePicker.max
+                max: datePicker.max,
+                attributeValue: datePicker.getAttribute('value'),
+                attributeMin: datePicker.getAttribute('min'),
+                attributeMax: datePicker.getAttribute('max')
             });
             
             // 오늘 날짜의 기록이 있으면 자동으로 로드
