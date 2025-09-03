@@ -468,9 +468,14 @@
                             매일 <strong>05:25</strong>에 기상 현황, <strong>05:26</strong>에 개구리 기록을<br>
                             자동으로 텔레그램으로 전송합니다.
                         </p>
-                        <button class="btn btn-primary" onclick="sendManualReport()">
-                            <i data-lucide="send"></i> 수동 보고서 전송 (테스트)
-                        </button>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn btn-primary" onclick="sendManualReport()">
+                                <i data-lucide="send"></i> 수동 보고서 전송 (테스트)
+                            </button>
+                            <button class="btn btn-secondary" onclick="sendTestMessage()">
+                                <i data-lucide="message-circle"></i> 테스트 메시지 전송
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

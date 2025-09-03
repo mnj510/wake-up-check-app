@@ -2461,26 +2461,40 @@ document.addEventListener('DOMContentLoaded', function() {
         // 텔레그램 메시지 전송
         async function sendTelegramMessage(message) {
             try {
+                console.log('텔레그램 전송 시작...');
+                
+                const requestBody = {
+                    chat_id: TELEGRAM_CHAT_ID,
+                    text: message,
+                    parse_mode: 'HTML'
+                };
+                
+                console.log('요청 본문:', requestBody);
+                console.log('API URL:', `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`);
+                
                 const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        chat_id: TELEGRAM_CHAT_ID,
-                        text: message,
-                        parse_mode: 'HTML'
-                    })
+                    body: JSON.stringify(requestBody)
                 });
 
+                console.log('응답 상태:', response.status, response.statusText);
+                
                 const result = await response.json();
+                console.log('API 응답:', result);
+                
                 if (result.ok) {
-                    console.log('텔레그램 메시지 전송 성공:', result);
+                    console.log('✅ 텔레그램 메시지 전송 성공:', result);
+                    alert('텔레그램 전송 성공!');
                 } else {
-                    console.error('텔레그램 메시지 전송 실패:', result);
+                    console.error('❌ 텔레그램 메시지 전송 실패:', result);
+                    alert(`텔레그램 전송 실패: ${result.description || '알 수 없는 오류'}`);
                 }
             } catch (error) {
-                console.error('텔레그램 전송 오류:', error);
+                console.error('❌ 텔레그램 전송 오류:', error);
+                alert(`텔레그램 전송 오류: ${error.message}`);
             }
         }
 
@@ -2539,7 +2553,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 수동으로 텔레그램 보고서 전송 (테스트용)
         function sendManualReport() {
+            console.log('수동 보고서 전송 시작...');
+            
+            // 봇 정보 확인
+            console.log('봇 토큰:', TELEGRAM_BOT_TOKEN);
+            console.log('채팅 ID:', TELEGRAM_CHAT_ID);
+            
             const message = formatTelegramMessage();
+            console.log('전송할 메시지:', message);
+            
+            // 메시지 길이 확인
+            console.log('메시지 길이:', message.length, '자');
+            
             sendTelegramMessage(message);
-            alert('텔레그램 보고서를 전송했습니다!');
+            alert('텔레그램 보고서를 전송했습니다! 콘솔을 확인해주세요.');
+        }
+
+        // 간단한 테스트 메시지 전송 (봇 연결 확인용)
+        function sendTestMessage() {
+            console.log('테스트 메시지 전송 시작...');
+            
+            const testMessage = '🧪 테스트 메시지입니다. 봇이 정상적으로 작동하는지 확인해주세요.';
+            
+            sendTelegramMessage(testMessage);
         }
