@@ -576,7 +576,21 @@ function calculateScore(memberId, month, year) {
             if (dateObj > today) return;
             
             if (dayData.wakeUp) score += 1;
-            if (dayData.frog) score += 1;
+            
+            // 개구리 잡기는 05:00~09:00 사이에만 점수 획득
+            if (dayData.frog) {
+                if (dayData.frogTimestamp) {
+                    // 저장된 개구리 잡기 완료 시간 사용
+                    const frogTime = new Date(dayData.frogTimestamp);
+                    const frogHour = frogTime.getHours();
+                    if (frogHour >= 5 && frogHour <= 9) {
+                        score += 1;
+                    }
+                } else {
+                    // 기존 데이터 호환성 (타임스탬프가 없는 경우)
+                    score += 1;
+                }
+            }
         }
     });
     
@@ -1150,10 +1164,20 @@ async function handleFrogCheck() {
     const todayData = checkData[targetMemberId]?.[targetDate];
     
     if (todayData?.wakeUp) {
+        // 현재 시간이 개구리 잡기 점수 획득 시간인지 확인
+        const now = new Date();
+        const currentHour = now.getHours();
+        const isScoringTime = currentHour >= 5 && currentHour <= 9; // 05:00 ~ 09:00
+        
         try {
-            console.log('개구리 잡기 저장 시작...', { targetMemberId, targetDate });
+            console.log('개구리 잡기 저장 시작...', { 
+                targetMemberId, 
+                targetDate, 
+                currentHour, 
+                isScoringTime 
+            });
             
-            // Supabase에 개구리 잡기 데이터 저장
+            // Supabase에 개구리 잡기 데이터 저장 (완료 시간 포함)
             const { data, error } = await supabase
                 .from('check_data')
                 .upsert([{
@@ -1161,6 +1185,7 @@ async function handleFrogCheck() {
                     date: targetDate,
                     wake_up: true,
                     frog: true,
+                    frog_timestamp: now.toISOString(), // 개구리 잡기 완료 시간 저장
                     must: checkData[targetMemberId]?.[targetDate]?.must || false
                 }], {
                     onConflict: 'member_id,date'
@@ -1176,10 +1201,16 @@ async function handleFrogCheck() {
             // 로컬 데이터 업데이트
             checkData[targetMemberId][targetDate] = {
                 ...checkData[targetMemberId][targetDate],
-                frog: true
+                frog: true,
+                frogTimestamp: now.toISOString() // 개구리 잡기 완료 시간 저장
             };
             
-            alert('개구리 잡기 완료! 1점 획득했습니다.');
+            // 점수 획득 여부에 따른 알림 메시지
+            if (isScoringTime) {
+                alert('개구리 잡기 완료! (05:00~09:00 작성 → 1점)');
+            } else {
+                alert('개구리 잡기 완료! (점수는 05:00~09:00 작성 시에만 부여됩니다)');
+            }
             
             // 관리자인 경우 대시보드 업데이트
             if (currentUser.isAdmin) {
@@ -1195,10 +1226,16 @@ async function handleFrogCheck() {
             console.log('로컬에만 저장합니다.');
             checkData[targetMemberId][targetDate] = {
                 ...checkData[targetMemberId][targetDate],
-                frog: true
+                frog: true,
+                frogTimestamp: now.toISOString() // 개구리 잡기 완료 시간 저장
             };
             
-            alert('개구리 잡기 완료! 1점 획득했습니다. (로컬 저장)');
+            // 점수 획득 여부에 따른 알림 메시지
+            if (isScoringTime) {
+                alert('개구리 잡기 완료! (05:00~09:00 작성 → 1점) (로컬 저장)');
+            } else {
+                alert('개구리 잡기 완료! (점수는 05:00~09:00 작성 시에만 부여됩니다) (로컬 저장)');
+            }
             
             if (currentUser.isAdmin) {
                 updateDashboard();
