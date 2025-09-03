@@ -736,6 +736,18 @@ h1 {
             margin-bottom: 1.5rem;
         }
 
+        /* 섹션 제목 스타일 */
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 1.5rem;
+            text-align: left;
+            padding-left: 0.5rem;
+            border-left: 4px solid #6f42c1;
+            padding-left: 1rem;
+        }
+
         /* MUST 입력 필드 */
         .must-inputs {
             display: flex;
