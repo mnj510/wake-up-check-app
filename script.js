@@ -601,28 +601,37 @@ function calculateScore(memberId, month, year) {
                 }
             }
             
-            let calendarHTML = '<div class="calendar-header">';
+            // 해당 월의 실제 날짜 수 계산
+            const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+            
+            let calendarHTML = `<div class="calendar-header" style="grid-template-columns: 80px repeat(${daysInMonth}, 1fr);">`;
             
             // 요일 헤더
             calendarHTML += '<div class="member-name">날짜</div>';
-            for (let day = 1; day <= 31; day++) {
+            for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(selectedYear, selectedMonth - 1, day);
-                if (date.getMonth() + 1 !== selectedMonth) break;
-                calendarHTML += `<div class="date-header">${day}</div>`;
+                const dayOfWeek = date.getDay();
+                const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+                const dayName = dayNames[dayOfWeek];
+                
+                calendarHTML += `
+                    <div class="date-header">
+                        <div class="date-number">${day}</div>
+                        <div class="day-name">${dayName}</div>
+                    </div>
+                `;
             }
             calendarHTML += '</div>';
             
             // 개인 기상 현황
-            calendarHTML += '<div class="calendar-row">';
+            calendarHTML += `<div class="calendar-row" style="grid-template-columns: 80px repeat(${daysInMonth}, 1fr);">`;
             calendarHTML += `<div class="member-name">${targetMemberName}</div>`;
             
             let successCount = 0;
             let failureCount = 0;
             
-            for (let day = 1; day <= 31; day++) {
+            for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(selectedYear, selectedMonth - 1, day);
-                if (date.getMonth() + 1 !== selectedMonth) break;
-                
                 const dateStr = date.toDateString();
                 const dayData = checkData[targetMemberId]?.[dateStr];
                 const today = new Date();
@@ -850,13 +859,14 @@ function calculateScore(memberId, month, year) {
             
             if (!memberCalendarHeader || !memberCalendarGrid) return;
             
-            // 날짜와 요일 헤더 생성
-            let headerHTML = '<div class="member-name-header">멤버</div>';
+            // 해당 월의 실제 날짜 수 계산
+            const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
             
-            for (let day = 1; day <= 31; day++) {
+            // 날짜와 요일 헤더 생성
+            let headerHTML = `<div class="member-name-header" style="grid-template-columns: 120px repeat(${daysInMonth}, 1fr);">멤버</div>`;
+            
+            for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(selectedYear, selectedMonth - 1, day);
-                if (date.getMonth() + 1 !== selectedMonth) break;
-                
                 const dayOfWeek = date.getDay();
                 const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
                 const dayName = dayNames[dayOfWeek];
@@ -875,12 +885,10 @@ function calculateScore(memberId, month, year) {
             let gridHTML = '';
             
             members.forEach(member => {
-                let memberRow = `<div class="member-name">${member.name}</div>`;
+                let memberRow = `<div class="member-name" style="grid-template-columns: 120px repeat(${daysInMonth}, 1fr);">${member.name}</div>`;
                 
-                for (let day = 1; day <= 31; day++) {
+                for (let day = 1; day <= daysInMonth; day++) {
                     const date = new Date(selectedYear, selectedMonth - 1, day);
-                    if (date.getMonth() + 1 !== selectedMonth) break;
-                    
                     const dateStr = date.toDateString();
                     const dayData = checkData[member.id]?.[dateStr];
                     const today = new Date();
