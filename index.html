@@ -209,20 +209,52 @@
 
                 <!-- 체크 버튼들 -->
                 <div class="check-buttons">
-                    <div class="check-card">
-                        <h4>기상 완료</h4>
-                        <p>00:00 ~ 04:59 사이에만 체크 가능 (1점)</p>
-                        <button class="check-btn primary" id="wakeUpBtn" onclick="handleWakeUpCheck()">
-                            기상 완료!
-                        </button>
+                    <!-- 일반 사용자용 버튼들 -->
+                    <div id="userCheckButtons">
+                        <div class="check-card">
+                            <h4>기상 완료</h4>
+                            <p>00:00 ~ 04:59 사이에만 체크 가능 (1점)</p>
+                            <button class="check-btn primary" id="wakeUpBtn" onclick="handleWakeUpCheck()">
+                                기상 완료!
+                            </button>
+                        </div>
+
+                        <div class="check-card">
+                            <h4>개구리 잡기 완료</h4>
+                            <p>기상 체크 후 언제든지 가능 (1점)</p>
+                            <button class="btn btn-success" id="frogBtn" onclick="handleFrogCheck()">
+                                개구리 잡기!
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="check-card">
-                        <h4>개구리 잡기 완료</h4>
-                        <p>기상 체크 후 언제든지 가능 (1점)</p>
-                        <button class="check-btn success" id="frogBtn" onclick="handleFrogCheck()">
-                            개구리 잡기!
-                        </button>
+                    <!-- 관리자용 버튼들 -->
+                    <div id="adminCheckButtons" class="hidden">
+                        <div class="check-card">
+                            <h4>기상 상태 관리</h4>
+                            <p>선택한 멤버의 기상 상태를 직접 설정합니다</p>
+                            <div class="admin-check-buttons">
+                                <button class="btn btn-success" onclick="handleAdminWakeUpSuccess()">
+                                    기상 완료 (1점)
+                                </button>
+                                <button class="btn btn-danger" onclick="handleAdminWakeUpFailure()">
+                                    기상 실패 (0점)
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="check-card">
+                            <h4>개구리 잡기 관리</h4>
+                            <p>선택한 멤버의 개구리 잡기 상태를 설정합니다</p>
+                            <div class="admin-check-buttons">
+                                <button class="btn btn-success" onclick="handleAdminFrogSuccess()">
+                                    개구리 잡기 완료 (1점)
+                                </button>
+                                <button class="btn btn-danger" onclick="handleAdminFrogFailure()">
+                                    개구리 잡기 실패 (0점)
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

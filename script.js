@@ -277,12 +277,16 @@ function updateDateTitles() {
             // 관리자 여부에 따른 UI 설정
             if (currentUser.isAdmin === true) {
                 console.log('관리자로 인식됨 - UI 설정 중...');
-                document.getElementById('userInfo').textContent = `${currentUser.name}님 (관리자)`;
+                document.getElementById('userInfo').textContent = '관리자';
                 document.getElementById('adminTab').classList.remove('hidden');
                 
                 // 관리자용 컨트롤 표시
                 document.getElementById('adminMemberSelect').classList.remove('hidden');
                 document.getElementById('adminMustMemberSelect').classList.remove('hidden');
+                
+                // 관리자용 체크 버튼 표시
+                document.getElementById('userCheckButtons').classList.add('hidden');
+                document.getElementById('adminCheckButtons').classList.remove('hidden');
                 
                 // 멤버 선택 드롭다운 초기화
                 updateMemberSelects();
@@ -294,6 +298,10 @@ function updateDateTitles() {
                 // 관리자용 컨트롤 숨김
                 document.getElementById('adminMemberSelect').classList.add('hidden');
                 document.getElementById('adminMustMemberSelect').classList.add('hidden');
+                
+                // 일반 사용자용 체크 버튼 표시
+                document.getElementById('userCheckButtons').classList.remove('hidden');
+                document.getElementById('adminCheckButtons').classList.add('hidden');
             }
             
             // 대시보드 초기화 (약간의 지연 후)
@@ -788,6 +796,7 @@ function calculateScore(memberId, month, year) {
             const checkMemberSelect = document.getElementById('checkMemberSelect');
             const mustMemberSelect = document.getElementById('mustMemberSelect');
             const existingMemberSelect = document.getElementById('existingMemberSelect');
+            const checkDateSelect = document.getElementById('checkDateSelect');
             
             if (checkMemberSelect) {
                 checkMemberSelect.innerHTML = '<option value="">멤버를 선택하세요</option>';
@@ -820,6 +829,15 @@ function calculateScore(memberId, month, year) {
                     option.textContent = member.name;
                     existingMemberSelect.appendChild(option);
                 });
+            }
+            
+            // 날짜 선택 필드 기본값을 오늘 날짜로 설정
+            if (checkDateSelect) {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                checkDateSelect.value = `${year}-${month}-${day}`;
             }
         }
 
@@ -1582,66 +1600,314 @@ async function deleteMember(memberId) {
     }
 }
 
-// 멤버 코드 추가
-async function addMemberCode() {
-    const memberId = document.getElementById('existingMemberSelect').value;
-    const newCode = document.getElementById('newMemberCodeForExisting').value.trim();
-    
-    if (!memberId) {
-        alert('멤버를 선택해주세요.');
-        return;
-    }
-    
-    if (!newCode) {
-        alert('새 멤버 코드를 입력해주세요.');
-        return;
-    }
-    
-    // 코드 중복 확인
-    const existingMember = members.find(m => m.code === newCode);
-    if (existingMember) {
-        alert('이미 사용 중인 멤버 코드입니다.');
-        return;
-    }
-    
-            try {
-            const member = members.find(m => m.id === memberId);
+        // 멤버 코드 추가
+        async function addMemberCode() {
+            const memberId = document.getElementById('existingMemberSelect').value;
+            const newCode = document.getElementById('newMemberCodeForExisting').value.trim();
             
-            // Supabase에 새 멤버 코드 추가 (is_admin 필드명 사용)
-            const { error } = await supabase
-                .from('members')
-                .insert([{
+            if (!memberId) {
+                alert('멤버를 선택해주세요.');
+                return;
+            }
+            
+            if (!newCode) {
+                alert('새 멤버 코드를 입력해주세요.');
+                return;
+            }
+            
+            // 코드 중복 확인
+            const existingMember = members.find(m => m.code === newCode);
+            if (existingMember) {
+                alert('이미 사용 중인 멤버 코드입니다.');
+                return;
+            }
+            
+            try {
+                const member = members.find(m => m.id === memberId);
+                
+                // Supabase에 새 멤버 코드 추가 (is_admin 필드명 사용)
+                const { error } = await supabase
+                    .from('members')
+                    .insert([{
+                        name: member.name,
+                        code: newCode,
+                        is_admin: false
+                    }]);
+                
+                if (error) throw error;
+                
+                // 로컬 데이터에 새 멤버 추가
+                const newMember = {
+                    id: Date.now().toString(),
                     name: member.name,
                     code: newCode,
-                    is_admin: false
-                }]);
-            
-            if (error) throw error;
-            
-            // 로컬 데이터에 새 멤버 추가
-            const newMember = {
-                id: Date.now().toString(),
-                name: member.name,
-                code: newCode,
-                isAdmin: false
-            };
-            members.push(newMember);
-            
-            alert('멤버 코드가 추가되었습니다.');
-            
-            // 폼 초기화
-            document.getElementById('existingMemberSelect').value = '';
-            document.getElementById('newMemberCodeForExisting').value = '';
-            
-            // 관리자 페이지 업데이트
-            updateAdminPage();
-            updateMemberSelects();
-            
-        } catch (error) {
-            console.error('멤버 코드 추가 오류:', error);
-            alert('멤버 코드 추가 중 오류가 발생했습니다.');
+                    isAdmin: false
+                };
+                members.push(newMember);
+                
+                alert('멤버 코드가 추가되었습니다.');
+                
+                // 폼 초기화
+                document.getElementById('existingMemberSelect').value = '';
+                document.getElementById('newMemberCodeForExisting').value = '';
+                
+                // 관리자 페이지 업데이트
+                updateAdminPage();
+                updateMemberSelects();
+                
+            } catch (error) {
+                console.error('멤버 코드 추가 오류:', error);
+                alert('멤버 코드 추가 중 오류가 발생했습니다.');
+            }
         }
-}
+
+        // 관리자용 기상 완료 처리
+        async function handleAdminWakeUpSuccess() {
+            const selectedMember = document.getElementById('checkMemberSelect').value;
+            const selectedDate = document.getElementById('checkDateSelect').value;
+            
+            if (!selectedMember) {
+                alert('멤버를 선택해주세요.');
+                return;
+            }
+            
+            if (!selectedDate) {
+                alert('날짜를 선택해주세요.');
+                return;
+            }
+            
+            try {
+                console.log('관리자 기상 완료 처리 시작...', { selectedMember, selectedDate });
+                
+                const targetDate = new Date(selectedDate).toDateString();
+                
+                // Supabase에 기상 체크 데이터 저장
+                const { data, error } = await supabase
+                    .from('check_data')
+                    .upsert([{
+                        member_id: selectedMember,
+                        date: targetDate,
+                        wake_up: true,
+                        frog: checkData[selectedMember]?.[targetDate]?.frog || false,
+                        must: checkData[selectedMember]?.[targetDate]?.must || false
+                    }], {
+                        onConflict: 'member_id,date'
+                    });
+                
+                if (error) {
+                    console.error('Supabase 저장 오류:', error);
+                    throw error;
+                }
+                
+                console.log('Supabase 저장 성공:', data);
+                
+                // 로컬 데이터 업데이트
+                if (!checkData[selectedMember]) {
+                    checkData[selectedMember] = {};
+                }
+                
+                checkData[selectedMember][targetDate] = {
+                    ...checkData[selectedMember][targetDate],
+                    wakeUp: true,
+                    wakeUpTime: new Date().toLocaleTimeString('ko-KR')
+                };
+                
+                alert('기상 완료로 설정되었습니다! 1점이 반영됩니다.');
+                
+                // 대시보드 업데이트
+                updateDashboard();
+                
+            } catch (error) {
+                console.error('관리자 기상 완료 처리 오류:', error);
+                alert('기상 완료 처리 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 관리자용 기상 실패 처리
+        async function handleAdminWakeUpFailure() {
+            const selectedMember = document.getElementById('checkMemberSelect').value;
+            const selectedDate = document.getElementById('checkDateSelect').value;
+            
+            if (!selectedMember) {
+                alert('멤버를 선택해주세요.');
+                return;
+            }
+            
+            if (!selectedDate) {
+                alert('날짜를 선택해주세요.');
+                return;
+            }
+            
+            try {
+                console.log('관리자 기상 실패 처리 시작...', { selectedMember, selectedDate });
+                
+                const targetDate = new Date(selectedDate).toDateString();
+                
+                // Supabase에 기상 체크 데이터 저장 (실패)
+                const { data, error } = await supabase
+                    .from('check_data')
+                    .upsert([{
+                        member_id: selectedMember,
+                        date: targetDate,
+                        wake_up: false,
+                        frog: false,
+                        must: checkData[selectedMember]?.[targetDate]?.must || false
+                    }], {
+                        onConflict: 'member_id,date'
+                    });
+                
+                if (error) {
+                    console.error('Supabase 저장 오류:', error);
+                    throw error;
+                }
+                
+                console.log('Supabase 저장 성공:', data);
+                
+                // 로컬 데이터 업데이트
+                if (!checkData[selectedMember]) {
+                    checkData[selectedMember] = {};
+                }
+                
+                checkData[selectedMember][targetDate] = {
+                    ...checkData[selectedMember][targetDate],
+                    wakeUp: false,
+                    wakeUpTime: null
+                };
+                
+                alert('기상 실패로 설정되었습니다! 0점이 반영됩니다.');
+                
+                // 대시보드 업데이트
+                updateDashboard();
+                
+            } catch (error) {
+                console.error('관리자 기상 실패 처리 오류:', error);
+                alert('기상 실패 처리 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 관리자용 개구리 잡기 완료 처리
+        async function handleAdminFrogSuccess() {
+            const selectedMember = document.getElementById('checkMemberSelect').value;
+            const selectedDate = document.getElementById('checkDateSelect').value;
+            
+            if (!selectedMember) {
+                alert('멤버를 선택해주세요.');
+                return;
+            }
+            
+            if (!selectedDate) {
+                alert('날짜를 선택해주세요.');
+                return;
+            }
+            
+            try {
+                console.log('관리자 개구리 잡기 완료 처리 시작...', { selectedMember, selectedDate });
+                
+                const targetDate = new Date(selectedDate).toDateString();
+                
+                // 기상 체크가 완료되어야 개구리 잡기 가능
+                if (!checkData[selectedMember]?.[targetDate]?.wakeUp) {
+                    alert('기상 체크를 먼저 완료해야 합니다.');
+                    return;
+                }
+                
+                // Supabase에 개구리 잡기 데이터 저장
+                const { data, error } = await supabase
+                    .from('check_data')
+                    .upsert([{
+                        member_id: selectedMember,
+                        date: targetDate,
+                        wake_up: true,
+                        frog: true,
+                        must: checkData[selectedMember]?.[targetDate]?.must || false
+                    }], {
+                        onConflict: 'member_id,date'
+                    });
+                
+                if (error) {
+                    console.error('Supabase 저장 오류:', error);
+                    throw error;
+                }
+                
+                console.log('Supabase 저장 성공:', data);
+                
+                // 로컬 데이터 업데이트
+                checkData[selectedMember][targetDate] = {
+                    ...checkData[selectedMember][targetDate],
+                    frog: true
+                };
+                
+                alert('개구리 잡기 완료로 설정되었습니다! 1점이 반영됩니다.');
+                
+                // 대시보드 업데이트
+                updateDashboard();
+                
+            } catch (error) {
+                console.error('관리자 개구리 잡기 완료 처리 오류:', error);
+                alert('개구리 잡기 완료 처리 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 관리자용 개구리 잡기 실패 처리
+        async function handleAdminFrogFailure() {
+            const selectedMember = document.getElementById('checkMemberSelect').value;
+            const selectedDate = document.getElementById('checkDateSelect').value;
+            
+            if (!selectedMember) {
+                alert('멤버를 선택해주세요.');
+                return;
+            }
+            
+            if (!selectedDate) {
+                alert('날짜를 선택해주세요.');
+                return;
+            }
+            
+            try {
+                console.log('관리자 개구리 잡기 실패 처리 시작...', { selectedMember, selectedDate });
+                
+                const targetDate = new Date(selectedDate).toDateString();
+                
+                // Supabase에 개구리 잡기 데이터 저장 (실패)
+                const { data, error } = await supabase
+                    .from('check_data')
+                    .upsert([{
+                        member_id: selectedMember,
+                        date: targetDate,
+                        wake_up: checkData[selectedMember]?.[targetDate]?.wakeUp || false,
+                        frog: false,
+                        must: checkData[selectedMember]?.[targetDate]?.must || false
+                    }], {
+                        onConflict: 'member_id,date'
+                    });
+                
+                if (error) {
+                    console.error('Supabase 저장 오류:', error);
+                    throw error;
+                }
+                
+                console.log('Supabase 저장 성공:', data);
+                
+                // 로컬 데이터 업데이트
+                if (!checkData[selectedMember]) {
+                    checkData[selectedMember] = {};
+                }
+                
+                checkData[selectedMember][targetDate] = {
+                    ...checkData[selectedMember][targetDate],
+                    frog: false
+                };
+                
+                alert('개구리 잡기 실패로 설정되었습니다! 0점이 반영됩니다.');
+                
+                // 대시보드 업데이트
+                updateDashboard();
+                
+            } catch (error) {
+                console.error('관리자 개구리 잡기 실패 처리 오류:', error);
+                alert('개구리 잡기 실패 처리 중 오류가 발생했습니다.');
+            }
+        }
 
 // 월/년도 변경 이벤트
 document.addEventListener('DOMContentLoaded', function() {

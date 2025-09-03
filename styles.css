@@ -1095,11 +1095,22 @@ h1 {
     flex-wrap: wrap;
 }
 
-.admin-controls .elegant-select,
-.admin-controls .date-input {
-    flex: 1;
-    min-width: 200px;
-}
+        .admin-controls .elegant-select,
+        .admin-controls .date-input {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .admin-check-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .admin-check-buttons .btn {
+            flex: 1;
+            min-width: 120px;
+        }
 
 .member-list {
     display: flex;
