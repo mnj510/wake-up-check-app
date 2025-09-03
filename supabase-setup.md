@@ -110,17 +110,21 @@ CREATE POLICY "자신의 데이터만 추가/수정 가능" ON must_records
 
 프로젝트 설정 > API에서 다음 정보를 확인합니다:
 
-- **Project URL**: `https://your-project-id.supabase.co`
-- **anon public key**: `your-anon-key`
+- **Project URL**: `https://apzzaarxrtohxlliwzgf.supabase.co`
+- **anon public key**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwenphYXJ4cnRvaHhsbGl3emdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4NjkzNTEsImV4cCI6MjA3MjQ0NTM1MX0.fAZk3usZDTCD-tT8kurxIjjGcRIKdGMh6Y-loW5hanY`
+
+✅ **이미 설정 완료됨!** `script.js` 파일에 자동으로 적용되었습니다.
 
 ## 6. 코드에서 설정 업데이트
 
-`script.js` 파일에서 다음 값을 업데이트합니다:
+`script.js` 파일에서 다음 값이 이미 설정되었습니다:
 
 ```javascript
-const SUPABASE_URL = 'https://your-project-id.supabase.co';
-const SUPABASE_ANON_KEY = 'your-anon-key';
+const SUPABASE_URL = 'https://apzzaarxrtohxlliwzgf.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwenphYXJ4cnRvaHhsbGl3emdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4NjkzNTEsImV4cCI6MjA3MjQ0NTM1MX0.fAZk3usZDTCD-tT8kurxIjjGcRIKdGMh6Y-loW5hanY';
 ```
+
+✅ **자동 설정 완료!** 별도 수정이 필요하지 않습니다.
 
 ## 7. 실시간 구독 설정 (선택사항)
 

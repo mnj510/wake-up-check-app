@@ -1,7 +1,7 @@
-// Supabase 설정
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Supabase 설정
+        const SUPABASE_URL = 'https://apzzaarxrtohxlliwzgf.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwenphYXJ4cnRvaHhsbGl3emdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4NjkzNTEsImV4cCI6MjA3MjQ0NTM1MX0.fAZk3usZDTCD-tT8kurxIjjGcRIKdGMh6Y-loW5hanY';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // 앱 상태
 let currentUser = null;
