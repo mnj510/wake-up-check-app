@@ -1421,10 +1421,14 @@ async function handleFrogCheck() {
             const selectedDateTitle = document.getElementById('selectedDateTitle');
             const recordDisplay = document.getElementById('recordDisplay');
             const recordEditSection = document.getElementById('recordEditSection');
+            const recordViewActions = document.getElementById('recordViewActions');
+            const saveOwnBtn = document.getElementById('saveOwnMustEditBtn');
+            const saveAdminBtn = document.getElementById('saveAdminMustEditBtn');
             
             if (!selectedDate) return;
             
             // 관리자인 경우 선택된 멤버 사용
+            let isViewingOwn = true;
             if (currentUser.isAdmin) {
                 const selectedMember = document.getElementById('mustMemberSelect').value;
                 if (!selectedMember) {
@@ -1432,6 +1436,7 @@ async function handleFrogCheck() {
                     return;
                 }
                 targetMemberId = selectedMember;
+                isViewingOwn = false;
             }
             
             // 날짜 형식 변환
@@ -1479,12 +1484,22 @@ async function handleFrogCheck() {
                     // 기존 형식의 기록 표시
                     recordDisplay.innerHTML = `<div class="record-content">${record}</div>`;
                 }
+                
+                // 본인 보기일 때 복사/수정 버튼 노출, 관리자는 숨김
+                if (!currentUser.isAdmin && recordViewActions) {
+                    recordViewActions.classList.remove('hidden');
+                } else if (recordViewActions) {
+                    recordViewActions.classList.add('hidden');
+                }
             } else {
                 recordDisplay.innerHTML = '<div class="no-record-message">해당 날짜에 기록이 없습니다.</div>';
+                if (recordViewActions) recordViewActions.classList.add('hidden');
             }
             
-            // 관리자 편집 섹션 토글 및 값 채우기
+            // 편집 섹션 토글 및 저장 버튼 가시성 설정
             if (currentUser.isAdmin) {
+                saveAdminBtn.classList.remove('hidden');
+                saveOwnBtn.classList.add('hidden');
                 if (record) {
                     recordEditSection.classList.remove('hidden');
                     const must = record.must || [];
@@ -1511,7 +1526,96 @@ async function handleFrogCheck() {
                     document.getElementById('dailyReviewEdit').value = '';
                 }
             } else if (recordEditSection) {
+                // 멤버는 자동으로 편집 섹션을 숨기고, '수정' 클릭 시 열림
                 recordEditSection.classList.add('hidden');
+                saveAdminBtn.classList.add('hidden');
+                saveOwnBtn.classList.add('hidden');
+            }
+        }
+
+        // 본인 기록: 복사
+        function copyLoadedRecord() {
+            const datePicker = document.getElementById('recordDatePicker');
+            const dateStr = new Date(datePicker.value).toDateString();
+            const record = mustRecords[currentUser.id]?.[dateStr];
+            if (!record) { alert('해당 날짜에 기록이 없습니다.'); return; }
+            let content = '';
+            const today = new Date(dateStr);
+            const yymmdd = today.getFullYear().toString().slice(-2) + String(today.getMonth()+1).padStart(2,'0') + String(today.getDate()).padStart(2,'0');
+            content += `${yymmdd} ${currentUser.name}\n\n`;
+            if (record.must?.some(m=>m)) {
+                content += '[📋 우선순위 MUST 5가지]\n';
+                record.must.forEach((m,i)=>{ if(m) content += `${i+1}. ${m}\n`; });
+                content += '\n';
+            }
+            if (record.frog?.some(f=>f)) {
+                content += '[🐸 개구리 3가지]\n';
+                record.frog.forEach((f,i)=>{ if(f) content += `${i+1}. ${f}\n`; });
+                content += '\n';
+            }
+            if (record.dailyReview) {
+                content += '[📝 하루 복기]\n';
+                content += record.dailyReview;
+            }
+            navigator.clipboard.writeText(content).then(()=>alert('복사되었습니다!'));
+        }
+
+        // 본인 기록: 수정 시작
+        function startOwnEdit() {
+            const datePicker = document.getElementById('recordDatePicker');
+            const dateStr = new Date(datePicker.value).toDateString();
+            const record = mustRecords[currentUser.id]?.[dateStr];
+            const recordEditSection = document.getElementById('recordEditSection');
+            const saveOwnBtn = document.getElementById('saveOwnMustEditBtn');
+            const saveAdminBtn = document.getElementById('saveAdminMustEditBtn');
+            if (!record) { alert('해당 날짜에 기록이 없습니다.'); return; }
+            recordEditSection.classList.remove('hidden');
+            saveOwnBtn.classList.remove('hidden');
+            saveAdminBtn.classList.add('hidden');
+            const must = record.must || [];
+            document.getElementById('mustEdit1').value = must[0] || '';
+            document.getElementById('mustEdit2').value = must[1] || '';
+            document.getElementById('mustEdit3').value = must[2] || '';
+            document.getElementById('mustEdit4').value = must[3] || '';
+            document.getElementById('mustEdit5').value = must[4] || '';
+            const frog = record.frog || [];
+            document.getElementById('frogEdit1').value = frog[0] || '';
+            document.getElementById('frogEdit2').value = frog[1] || '';
+            document.getElementById('frogEdit3').value = frog[2] || '';
+            document.getElementById('dailyReviewEdit').value = record.dailyReview || '';
+        }
+
+        // 본인 기록: 수정 저장 (점수 증가 없음)
+        async function saveOwnMustEdit() {
+            const datePicker = document.getElementById('recordDatePicker');
+            if (!datePicker.value) { alert('날짜를 선택해주세요.'); return; }
+            const dateStr = new Date(datePicker.value).toDateString();
+            const must = [
+                document.getElementById('mustEdit1').value.trim(),
+                document.getElementById('mustEdit2').value.trim(),
+                document.getElementById('mustEdit3').value.trim(),
+                document.getElementById('mustEdit4').value.trim(),
+                document.getElementById('mustEdit5').value.trim()
+            ];
+            const frog = [
+                document.getElementById('frogEdit1').value.trim(),
+                document.getElementById('frogEdit2').value.trim(),
+                document.getElementById('frogEdit3').value.trim()
+            ];
+            const dailyReview = document.getElementById('dailyReviewEdit').value.trim();
+            const recordData = { type: 'creation', must, frog, dailyReview, timestamp: new Date().toISOString() };
+            try {
+                const { error } = await supabase
+                    .from('must_records')
+                    .upsert([{ member_id: currentUser.id, date: dateStr, content: recordData }], { onConflict: 'member_id,date' });
+                if (error) throw error;
+                if (!mustRecords[currentUser.id]) mustRecords[currentUser.id] = {};
+                mustRecords[currentUser.id][dateStr] = recordData;
+                alert('수정이 저장되었습니다. (점수 변화 없음)');
+                loadMustRecord();
+            } catch (e) {
+                console.error('본인 MUST 수정 저장 오류:', e);
+                alert('저장 중 오류가 발생했습니다.');
             }
         }
 

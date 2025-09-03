@@ -1488,3 +1488,8 @@ h1 {
 :root {
     --cell-size: 36px;
 }
+
+        .record-display-card .must-action-buttons {
+            margin-top: 1rem;
+            justify-content: flex-end;
+        }

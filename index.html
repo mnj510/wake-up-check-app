@@ -356,9 +356,13 @@
                                 날짜를 선택하면 해당 날짜의 기록이 표시됩니다.
                             </div>
                         </div>
+                        <div id="recordViewActions" class="must-action-buttons hidden">
+                            <button class="btn btn-secondary" onclick="copyLoadedRecord()">복사</button>
+                            <button class="btn btn-primary" onclick="startOwnEdit()">수정</button>
+                        </div>
                     </div>
 
-                    <!-- 관리자: 기록 수정 섹션 -->
+                    <!-- 관리자: 기록 수정 섹션 (멤버도 본인 기록 수정 시 사용) -->
                     <div id="recordEditSection" class="card hidden">
                         <h3 class="card-title">기록 수정</h3>
                         <div class="must-card">
@@ -384,7 +388,8 @@
                             <textarea id="dailyReviewEdit" class="daily-review-textarea" placeholder="해당 날짜의 하루 복기"></textarea>
                         </div>
                         <div class="must-action-buttons">
-                            <button class="btn btn-primary" onclick="saveMustEdit()">수정 저장</button>
+                            <button id="saveOwnMustEditBtn" class="btn btn-primary hidden" onclick="saveOwnMustEdit()">수정 저장</button>
+                            <button id="saveAdminMustEditBtn" class="btn btn-primary hidden" onclick="saveMustEdit()">수정 저장(관리자)</button>
                         </div>
                     </div>
 
