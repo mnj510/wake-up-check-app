@@ -258,11 +258,25 @@ function updateDateTitles() {
             // 로그인 성공
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('appScreen').style.display = 'block';
-            document.getElementById('userInfo').textContent = `${currentUser.name}님 환영합니다`;
             
-            // 관리자 탭 표시
+            // 관리자 여부에 따른 UI 설정
             if (currentUser.isAdmin) {
+                document.getElementById('userInfo').textContent = `${currentUser.name}님 (관리자)`;
                 document.getElementById('adminTab').classList.remove('hidden');
+                
+                // 관리자용 컨트롤 표시
+                document.getElementById('adminMemberSelect').classList.remove('hidden');
+                document.getElementById('adminMustMemberSelect').classList.remove('hidden');
+                
+                // 멤버 선택 드롭다운 초기화
+                updateMemberSelects();
+            } else {
+                document.getElementById('userInfo').textContent = `${currentUser.name}님 환영합니다`;
+                document.getElementById('adminTab').classList.add('hidden');
+                
+                // 관리자용 컨트롤 숨김
+                document.getElementById('adminMemberSelect').classList.add('hidden');
+                document.getElementById('adminMustMemberSelect').classList.add('hidden');
             }
             
             // 대시보드 초기화 (약간의 지연 후)
@@ -537,11 +551,30 @@ function calculateScore(memberId, month, year) {
 
         // 개인 달력 업데이트
         function updatePersonalCalendar() {
-            if (!currentUser || currentUser.isAdmin) return;
+            if (!currentUser) return;
             
             const personalCalendar = document.getElementById('personalCalendar');
+            if (!personalCalendar) return;
+            
             const selectedYear = parseInt(document.getElementById('yearSelect').value);
             const selectedMonth = parseInt(document.getElementById('monthSelect').value);
+            
+            // 관리자인 경우 선택된 멤버의 달력 표시
+            let targetMemberId = currentUser.id;
+            let targetMemberName = currentUser.name;
+            
+            if (currentUser.isAdmin) {
+                const selectedMember = document.getElementById('checkMemberSelect')?.value;
+                if (selectedMember) {
+                    targetMemberId = selectedMember;
+                    const member = members.find(m => m.id === selectedMember);
+                    targetMemberName = member ? member.name : '선택된 멤버';
+                } else {
+                    // 멤버가 선택되지 않은 경우 기본 메시지
+                    personalCalendar.innerHTML = '<div class="calendar-summary"><p>멤버를 선택하면 해당 멤버의 기상 현황을 볼 수 있습니다.</p></div>';
+                    return;
+                }
+            }
             
             let calendarHTML = '<div class="calendar-header">';
             
@@ -556,7 +589,7 @@ function calculateScore(memberId, month, year) {
             
             // 개인 기상 현황
             calendarHTML += '<div class="calendar-row">';
-            calendarHTML += '<div class="member-name">기상</div>';
+            calendarHTML += `<div class="member-name">${targetMemberName}</div>`;
             
             let successCount = 0;
             let failureCount = 0;
@@ -566,8 +599,7 @@ function calculateScore(memberId, month, year) {
                 if (date.getMonth() + 1 !== selectedMonth) break;
                 
                 const dateStr = date.toDateString();
-                const dayData = checkData[currentUser.id]?.[dateStr];
-                const mustData = mustRecords[currentUser.id]?.[dateStr];
+                const dayData = checkData[targetMemberId]?.[dateStr];
                 const today = new Date();
                 
                 let cellClass = '';
@@ -596,7 +628,7 @@ function calculateScore(memberId, month, year) {
             // 요약 정보 추가
             calendarHTML += `
                 <div class="calendar-summary">
-                    <p>이번 달 나의 기상 완료: <strong>${successCount}회</strong> / 실패: <strong>${failureCount}회</strong></p>
+                    <p>이번 달 ${targetMemberName}의 기상 완료: <strong>${successCount}회</strong> / 실패: <strong>${failureCount}회</strong></p>
                 </div>
             `;
             
@@ -723,6 +755,46 @@ function calculateScore(memberId, month, year) {
             ];
         }
 
+        // 멤버 선택 드롭다운 업데이트
+        function updateMemberSelects() {
+            const checkMemberSelect = document.getElementById('checkMemberSelect');
+            const mustMemberSelect = document.getElementById('mustMemberSelect');
+            const existingMemberSelect = document.getElementById('existingMemberSelect');
+            
+            if (checkMemberSelect) {
+                checkMemberSelect.innerHTML = '<option value="">멤버를 선택하세요</option>';
+                members.forEach(member => {
+                    const option = document.createElement('option');
+                    option.value = member.id;
+                    option.textContent = member.name;
+                    checkMemberSelect.appendChild(option);
+                });
+                
+                // 멤버 선택 변경 시 대시보드 업데이트
+                checkMemberSelect.addEventListener('change', updateDashboard);
+            }
+            
+            if (mustMemberSelect) {
+                mustMemberSelect.innerHTML = '<option value="">멤버를 선택하세요</option>';
+                members.forEach(member => {
+                    const option = document.createElement('option');
+                    option.value = member.id;
+                    option.textContent = member.name;
+                    mustMemberSelect.appendChild(option);
+                });
+            }
+            
+            if (existingMemberSelect) {
+                existingMemberSelect.innerHTML = '<option value="">멤버를 선택하세요</option>';
+                members.forEach(member => {
+                    const option = document.createElement('option');
+                    option.value = member.id;
+                    option.textContent = member.name;
+                    existingMemberSelect.appendChild(option);
+                });
+            }
+        }
+
         // 멤버별 기상 현황 그리드 업데이트
         function updateMemberCalendarGrid() {
             const memberCalendarHeader = document.getElementById('memberCalendarHeader');
@@ -840,89 +912,144 @@ function calculateScore(memberId, month, year) {
 
         // 기상 체크 처리
         async function handleWakeUpCheck() {
-            const now = new Date();
-            const hours = now.getHours();
-            const today = now.toDateString();
+            let targetMemberId = currentUser.id;
+            let targetDate = new Date().toDateString();
             
-            if (hours >= 0 && hours < 5) {
-                try {
-                    console.log('기상 체크 저장 시작...');
-                    
-                    // Supabase에 기상 체크 데이터 저장
-                    const { data, error } = await supabase
-                        .from('check_data')
-                        .upsert([{
-                            member_id: currentUser.id,
-                            date: today,
-                            wake_up: true,
-                            frog: checkData[currentUser.id]?.[today]?.frog || false,
-                            must: checkData[currentUser.id]?.[today]?.must || false
-                        }], {
-                            onConflict: 'member_id,date'
-                        });
-                    
-                    if (error) {
-                        console.error('Supabase 저장 오류:', error);
-                        throw error;
-                    }
-                    
-                    console.log('Supabase 저장 성공:', data);
-                    
-                    // 로컬 데이터 업데이트
-                    if (!checkData[currentUser.id]) {
-                        checkData[currentUser.id] = {};
-                    }
-                    
-                    checkData[currentUser.id][today] = {
-                        ...checkData[currentUser.id][today],
-                        wakeUp: true,
-                        wakeUpTime: now.toLocaleTimeString('ko-KR')
-                    };
-                    
-                    alert('기상 체크 완료! 1점 획득했습니다.');
-                    updateWakeUpButton();
-                    
-                } catch (error) {
-                    console.error('기상 체크 저장 오류:', error);
-                    
-                    // 로컬에만 저장 (오프라인 모드)
-                    console.log('로컬에만 저장합니다.');
-                    if (!checkData[currentUser.id]) {
-                        checkData[currentUser.id] = {};
-                    }
-                    
-                    checkData[currentUser.id][today] = {
-                        ...checkData[currentUser.id][today],
-                        wakeUp: true,
-                        wakeUpTime: now.toLocaleTimeString('ko-KR')
-                    };
-                    
-                    alert('기상 체크 완료! 1점 획득했습니다. (로컬 저장)');
+            // 관리자인 경우 선택된 멤버와 날짜 사용
+            if (currentUser.isAdmin) {
+                const selectedMember = document.getElementById('checkMemberSelect').value;
+                const selectedDate = document.getElementById('checkDateSelect').value;
+                
+                if (!selectedMember) {
+                    alert('멤버를 선택해주세요.');
+                    return;
+                }
+                
+                if (!selectedDate) {
+                    alert('날짜를 선택해주세요.');
+                    return;
+                }
+                
+                targetMemberId = selectedMember;
+                targetDate = new Date(selectedDate).toDateString();
+            } else {
+                // 일반 사용자는 현재 시간 제한 확인
+                const now = new Date();
+                const hours = now.getHours();
+                
+                if (hours < 0 || hours >= 5) {
+                    alert('기상 체크는 00:00 ~ 04:59 사이에만 가능합니다.');
+                    return;
+                }
+            }
+            
+            try {
+                console.log('기상 체크 저장 시작...', { targetMemberId, targetDate });
+                
+                // Supabase에 기상 체크 데이터 저장
+                const { data, error } = await supabase
+                    .from('check_data')
+                    .upsert([{
+                        member_id: targetMemberId,
+                        date: targetDate,
+                        wake_up: true,
+                        frog: checkData[targetMemberId]?.[targetDate]?.frog || false,
+                        must: checkData[targetMemberId]?.[targetDate]?.must || false
+                    }], {
+                        onConflict: 'member_id,date'
+                    });
+                
+                if (error) {
+                    console.error('Supabase 저장 오류:', error);
+                    throw error;
+                }
+                
+                console.log('Supabase 저장 성공:', data);
+                
+                // 로컬 데이터 업데이트
+                if (!checkData[targetMemberId]) {
+                    checkData[targetMemberId] = {};
+                }
+                
+                checkData[targetMemberId][targetDate] = {
+                    ...checkData[targetMemberId][targetDate],
+                    wakeUp: true,
+                    wakeUpTime: new Date().toLocaleTimeString('ko-KR')
+                };
+                
+                alert('기상 체크 완료! 1점 획득했습니다.');
+                
+                // 관리자인 경우 대시보드 업데이트
+                if (currentUser.isAdmin) {
+                    updateDashboard();
+                } else {
                     updateWakeUpButton();
                 }
-            } else {
-                alert('기상 체크는 00:00 ~ 04:59 사이에만 가능합니다.');
+                
+            } catch (error) {
+                console.error('기상 체크 저장 오류:', error);
+                
+                // 로컬에만 저장 (오프라인 모드)
+                console.log('로컬에만 저장합니다.');
+                if (!checkData[targetMemberId]) {
+                    checkData[targetMemberId] = {};
+                }
+                
+                checkData[targetMemberId][targetDate] = {
+                    ...checkData[targetMemberId][targetDate],
+                    wakeUp: true,
+                    wakeUpTime: new Date().toLocaleTimeString('ko-KR')
+                };
+                
+                alert('기상 체크 완료! 1점 획득했습니다. (로컬 저장)');
+                
+                if (currentUser.isAdmin) {
+                    updateDashboard();
+                } else {
+                    updateWakeUpButton();
+                }
             }
         }
 
 // 개구리 잡기 처리
 async function handleFrogCheck() {
-    const today = new Date().toDateString();
-    const todayData = checkData[currentUser.id]?.[today];
+    let targetMemberId = currentUser.id;
+    let targetDate = new Date().toDateString();
+    
+    // 관리자인 경우 선택된 멤버와 날짜 사용
+    if (currentUser.isAdmin) {
+        const selectedMember = document.getElementById('checkMemberSelect').value;
+        const selectedDate = document.getElementById('checkDateSelect').value;
+        
+        if (!selectedMember) {
+            alert('멤버를 선택해주세요.');
+            return;
+        }
+        
+        if (!selectedDate) {
+            alert('날짜를 선택해주세요.');
+            return;
+        }
+        
+        targetMemberId = selectedMember;
+        targetDate = new Date(selectedDate).toDateString();
+    }
+    
+    const todayData = checkData[targetMemberId]?.[targetDate];
     
     if (todayData?.wakeUp) {
         try {
-            console.log('개구리 잡기 저장 시작...');
+            console.log('개구리 잡기 저장 시작...', { targetMemberId, targetDate });
             
             // Supabase에 개구리 잡기 데이터 저장
             const { data, error } = await supabase
                 .from('check_data')
                 .upsert([{
-                    member_id: currentUser.id,
-                    date: today,
+                    member_id: targetMemberId,
+                    date: targetDate,
                     wake_up: true,
                     frog: true,
-                    must: checkData[currentUser.id]?.[today]?.must || false
+                    must: checkData[targetMemberId]?.[targetDate]?.must || false
                 }], {
                     onConflict: 'member_id,date'
                 });
@@ -935,26 +1062,37 @@ async function handleFrogCheck() {
             console.log('Supabase 저장 성공:', data);
             
             // 로컬 데이터 업데이트
-            checkData[currentUser.id][today] = {
-                ...checkData[currentUser.id][today],
+            checkData[targetMemberId][targetDate] = {
+                ...checkData[targetMemberId][targetDate],
                 frog: true
             };
             
             alert('개구리 잡기 완료! 1점 획득했습니다.');
-            updateWakeUpButton();
+            
+            // 관리자인 경우 대시보드 업데이트
+            if (currentUser.isAdmin) {
+                updateDashboard();
+            } else {
+                updateWakeUpButton();
+            }
             
         } catch (error) {
             console.error('개구리 잡기 저장 오류:', error);
             
             // 로컬에만 저장 (오프라인 모드)
             console.log('로컬에만 저장합니다.');
-            checkData[currentUser.id][today] = {
-                ...checkData[currentUser.id][today],
+            checkData[targetMemberId][targetDate] = {
+                ...checkData[targetMemberId][targetDate],
                 frog: true
             };
             
             alert('개구리 잡기 완료! 1점 획득했습니다. (로컬 저장)');
-            updateWakeUpButton();
+            
+            if (currentUser.isAdmin) {
+                updateDashboard();
+            } else {
+                updateDashboard();
+            }
         }
     } else {
         alert('기상 체크를 먼저 완료해주세요.');
@@ -1181,12 +1319,23 @@ async function handleFrogCheck() {
 
         // 선택된 날짜의 MUST 기록 로드
         function loadMustRecord() {
+            let targetMemberId = currentUser.id;
             const datePicker = document.getElementById('recordDatePicker');
             const selectedDate = datePicker.value;
             const selectedDateTitle = document.getElementById('selectedDateTitle');
             const recordDisplay = document.getElementById('recordDisplay');
             
             if (!selectedDate) return;
+            
+            // 관리자인 경우 선택된 멤버 사용
+            if (currentUser.isAdmin) {
+                const selectedMember = document.getElementById('mustMemberSelect').value;
+                if (!selectedMember) {
+                    alert('멤버를 선택해주세요.');
+                    return;
+                }
+                targetMemberId = selectedMember;
+            }
             
             // 날짜 형식 변환
             const date = new Date(selectedDate);
@@ -1196,7 +1345,7 @@ async function handleFrogCheck() {
             selectedDateTitle.textContent = formattedDate;
             
             // 해당 날짜의 기록 확인
-            const record = mustRecords[currentUser.id]?.[dateStr];
+            const record = mustRecords[targetMemberId]?.[dateStr];
             
             if (record) {
                 if (record.type === 'creation') {
@@ -1388,10 +1537,72 @@ async function deleteMember(memberId) {
         
         alert('멤버와 관련 데이터가 모두 삭제되었습니다.');
         updateAdminPage();
+        updateMemberSelects();
         
     } catch (error) {
         console.error('멤버 삭제 오류:', error);
         alert('멤버 삭제 중 오류가 발생했습니다.');
+    }
+}
+
+// 멤버 코드 추가
+async function addMemberCode() {
+    const memberId = document.getElementById('existingMemberSelect').value;
+    const newCode = document.getElementById('newMemberCodeForExisting').value.trim();
+    
+    if (!memberId) {
+        alert('멤버를 선택해주세요.');
+        return;
+    }
+    
+    if (!newCode) {
+        alert('새 멤버 코드를 입력해주세요.');
+        return;
+    }
+    
+    // 코드 중복 확인
+    const existingMember = members.find(m => m.code === newCode);
+    if (existingMember) {
+        alert('이미 사용 중인 멤버 코드입니다.');
+        return;
+    }
+    
+    try {
+        const member = members.find(m => m.id === memberId);
+        
+        // Supabase에 새 멤버 코드 추가
+        const { error } = await supabase
+            .from('members')
+            .insert([{
+                name: member.name,
+                code: newCode,
+                isAdmin: false
+            }]);
+        
+        if (error) throw error;
+        
+        // 로컬 데이터에 새 멤버 추가
+        const newMember = {
+            id: Date.now().toString(),
+            name: member.name,
+            code: newCode,
+            isAdmin: false
+        };
+        members.push(newMember);
+        
+        alert('멤버 코드가 추가되었습니다.');
+        
+        // 폼 초기화
+        document.getElementById('existingMemberSelect').value = '';
+        document.getElementById('newMemberCodeForExisting').value = '';
+        
+        // 관리자 페이지 업데이트
+        updateAdminPage();
+        updateMemberSelects();
+        
+    } catch (error) {
+        console.error('멤버 코드 추가 오류:', error);
+        alert('멤버 코드 추가 중 오류가 발생했습니다.');
     }
 }
 

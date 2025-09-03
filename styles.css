@@ -1088,6 +1088,19 @@ h1 {
     }
 }
 
+.admin-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.admin-controls .elegant-select,
+.admin-controls .date-input {
+    flex: 1;
+    min-width: 200px;
+}
+
 .member-list {
     display: flex;
     flex-direction: column;
