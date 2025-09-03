@@ -493,11 +493,16 @@ function showPage(pageName) {
             let wakeUpFailure = 0;
             let totalDays = 0;
             
+            // 해당 월의 실제 날짜 수 계산
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const today = new Date();
+            
             // 해당 월의 모든 날짜 확인
-            for (let day = 1; day <= 31; day++) {
+            for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(year, month - 1, day);
-                if (date.getMonth() + 1 !== month) break;
-                if (date > new Date()) break;
+                
+                // 미래 날짜는 제외
+                if (date > today) break;
                 
                 totalDays++;
                 const dateStr = date.toDateString();
@@ -529,11 +534,16 @@ function getAllStats(month, year) {
     });
     
     // 전체 가능한 날짜 수 계산
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const today = new Date();
     let totalDays = 0;
-    for (let day = 1; day <= 31; day++) {
+    
+    for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month - 1, day);
-        if (date.getMonth() + 1 !== month) break;
-        if (date > new Date()) break;
+        
+        // 미래 날짜는 제외
+        if (date > today) break;
+        
         totalDays++;
     }
     
@@ -553,11 +563,19 @@ function calculateScore(memberId, month, year) {
     const memberCheckData = checkData[memberId] || {};
     const memberMustData = mustRecords[memberId] || {};
     
+    // 해당 월의 실제 날짜 수 계산
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const today = new Date();
+    
     // 체크 데이터에서 점수 계산
     Object.keys(memberCheckData).forEach(date => {
         const dateObj = new Date(date);
         if (dateObj.getMonth() + 1 === month && dateObj.getFullYear() === year) {
             const dayData = memberCheckData[date];
+            
+            // 미래 날짜는 제외
+            if (dateObj > today) return;
+            
             if (dayData.wakeUp) score += 1;
             if (dayData.frog) score += 1;
         }
@@ -567,9 +585,24 @@ function calculateScore(memberId, month, year) {
     Object.keys(memberMustData).forEach(date => {
         const dateObj = new Date(date);
         if (dateObj.getMonth() + 1 === month && dateObj.getFullYear() === year) {
+            // 미래 날짜는 제외
+            if (dateObj > today) return;
+            
             score += 1;
         }
     });
+    
+    console.log(`[점수 계산] ${memberId}의 ${year}년 ${month}월 점수: ${score}점`);
+    console.log(`[점수 상세] 기상: ${Object.keys(memberCheckData).filter(date => {
+        const dateObj = new Date(date);
+        return dateObj.getMonth() + 1 === month && dateObj.getFullYear() === year && dateObj <= today;
+    }).filter(date => memberCheckData[date]?.wakeUp).length}일, 개구리: ${Object.keys(memberCheckData).filter(date => {
+        const dateObj = new Date(date);
+        return dateObj.getMonth() + 1 === month && dateObj.getFullYear() === year && dateObj <= today;
+    }).filter(date => memberCheckData[date]?.frog).length}일, MUST: ${Object.keys(memberMustData).filter(date => {
+        const dateObj = new Date(date);
+        return dateObj.getMonth() + 1 === month && dateObj.getFullYear() === year && dateObj <= today;
+    }).length}일`);
     
     return score;
 }
