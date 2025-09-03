@@ -649,8 +649,8 @@ function calculateScore(memberId, month, year) {
                 
                 calendarHTML += `
                     <div class="date-header">
-                        <div class="date-number">${day}</div>
                         <div class="day-name">${dayName}</div>
+                        <div class="date-number">${day}</div>
                     </div>
                 `;
             }
@@ -906,8 +906,8 @@ function calculateScore(memberId, month, year) {
                 
                 headerHTML += `
                     <div class="date-header">
-                        <div class="date-number">${day}</div>
                         <div class="day-name">${dayName}</div>
+                        <div class="date-number">${day}</div>
                     </div>
                 `;
             }
