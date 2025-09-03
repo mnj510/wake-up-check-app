@@ -1433,6 +1433,13 @@ async function handleFrogCheck() {
             
             // 오늘 날짜의 기록이 있으면 자동으로 로드
             loadMustRecord();
+            
+            // 날짜 선택기 최소값을 2025년 9월로 설정
+            const minDate = new Date(2025, 8, 1); // 9월은 8 (0부터 시작)
+            datePicker.min = minDate.toISOString().split('T')[0];
+            
+            // 날짜 선택기 최대값을 오늘로 설정 (미래 날짜 선택 방지)
+            datePicker.max = today.toISOString().split('T')[0];
         }
 
         // 선택된 날짜의 MUST 기록 로드
