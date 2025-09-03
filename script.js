@@ -2465,8 +2465,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const requestBody = {
                     chat_id: TELEGRAM_CHAT_ID,
-                    text: message,
-                    parse_mode: 'HTML'
+                    text: message
+                    // parse_mode 제거 (HTML 태그 파싱 오류 방지)
                 };
                 
                 console.log('요청 본문:', requestBody);
