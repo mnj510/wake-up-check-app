@@ -2583,6 +2583,39 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('텔레그램 보고서를 전송했습니다! 콘솔을 확인해주세요.');
         }
 
+        // 기상 현황만 전송 (테스트용)
+        function sendWakeUpReport() {
+            console.log('기상 현황 전송 시작...');
+            
+            const message = formatWakeUpMessage();
+            console.log('전송할 메시지:', message);
+            
+            sendTelegramMessage(message);
+            alert('기상 현황을 텔레그램으로 전송했습니다!');
+        }
+
+        // 개구리 기록만 전송 (테스트용)
+        function sendFrogReport() {
+            console.log('개구리 기록 전송 시작...');
+            
+            const message = formatFrogMessage();
+            console.log('전송할 메시지:', message);
+            
+            sendTelegramMessage(message);
+            alert('개구리 기록을 텔레그램으로 전송했습니다!');
+        }
+
+        // 멤버 점수 현황 전송
+        function sendScoreReport() {
+            console.log('멤버 점수 현황 전송 시작...');
+            
+            const message = formatScoreMessage();
+            console.log('전송할 메시지:', message);
+            
+            sendTelegramMessage(message);
+            alert('멤버 점수 현황을 텔레그램으로 전송했습니다!');
+        }
+
         // 간단한 테스트 메시지 전송 (봇 연결 확인용)
         function sendTestMessage() {
             console.log('테스트 메시지 전송 시작...');
@@ -2590,4 +2623,57 @@ document.addEventListener('DOMContentLoaded', function() {
             const testMessage = '🧪 테스트 메시지입니다. 봇이 정상적으로 작동하는지 확인해주세요.';
             
             sendTelegramMessage(testMessage);
+        }
+
+        // 멤버 점수 현황 메시지 형식화
+        function formatScoreMessage() {
+            const now = new Date();
+            const dateStr = now.getFullYear().toString().slice(-2) + 
+                           String(now.getMonth() + 1).padStart(2, '0') + 
+                           String(now.getDate()).padStart(2, '0');
+            
+            const selectedMonth = parseInt(document.getElementById('monthSelect').value);
+            const selectedYear = parseInt(document.getElementById('yearSelect').value);
+            
+            // 모든 멤버의 점수 계산
+            const memberScores = members.map(member => {
+                const score = calculateScore(member.id, selectedMonth, selectedYear);
+                return {
+                    name: member.name,
+                    score: score
+                };
+            }).filter(member => member.score > 0); // 점수가 0보다 큰 멤버만
+            
+            // 점수별 내림차순 정렬
+            memberScores.sort((a, b) => b.score - a.score);
+            
+            // 상위 70%와 하위 30% 분리
+            const totalMembers = memberScores.length;
+            const top70Count = Math.ceil(totalMembers * 0.7);
+            const top70 = memberScores.slice(0, top70Count);
+            const bottom30 = memberScores.slice(top70Count);
+            
+            let message = `<멤버 점수 현황>\n\n`;
+            message += `${selectedMonth}월 (${dateStr} 기준)\n\n`;
+            
+            // 상위 70%
+            message += `<상위 70%>\n`;
+            if (top70.length > 0) {
+                top70.forEach((member, index) => {
+                    message += `${index + 1}. ${member.name} (${member.score}점)\n`;
+                });
+            } else {
+                message += `- 없음\n`;
+            }
+            
+            message += `\n<하위 30%>\n`;
+            if (bottom30.length > 0) {
+                bottom30.forEach((member, index) => {
+                    message += `${index + 1}. ${member.name} (${member.score}점)\n`;
+                });
+            } else {
+                message += `- 없음\n`;
+            }
+            
+            return message;
         }
