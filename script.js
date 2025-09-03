@@ -38,6 +38,9 @@ let mustRecords = {};
             
             // 날짜 제목 업데이트
             updateDateTitles();
+            
+            // 텔레그램 자동 보고서 스케줄링 시작
+            scheduleDailyReport();
         });
 
         // 시계 업데이트
@@ -2320,11 +2323,180 @@ document.addEventListener('DOMContentLoaded', function() {
                         ⏰ <span class="time-highlight">${20 - currentHour}시간 ${59 - now.getMinutes()}분 후</span> 점수 획득 가능!<br>
                         MUST 기록 저장은 <strong>20:00 ~ 23:59</strong> 사이에만 1점을 획득할 수 있습니다.
                     `;
-                } else {
+            } else {
                     timeMessage.innerHTML = `
                         🌙 오늘 점수 획득 시간이 <span class="time-highlight">종료</span>되었습니다.<br>
                         MUST 기록 저장은 <strong>20:00 ~ 23:59</strong> 사이에만 1점을 획득할 수 있습니다.
                     `;
                 }
             }
+        }
+
+        // 텔레그램 봇 설정
+        const TELEGRAM_BOT_TOKEN = '8428192472:AAFdpbUi1-cJQZO63-loQ8pXkQc-FS-WTb4';
+        const TELEGRAM_CHAT_ID = '-4827580561';
+
+        // 기상 현황 자동 분류 및 텔레그램 전송
+        function getWakeUpStatus() {
+            const today = new Date().toDateString();
+            const completedMembers = [];
+            const failedMembers = [];
+
+            // 모든 멤버의 오늘 기상 현황 확인
+            members.forEach(member => {
+                const memberData = checkData[member.id]?.[today];
+                if (memberData?.wakeUp) {
+                    completedMembers.push(member.name);
+                } else {
+                    failedMembers.push(member.name);
+                }
+            });
+
+            return { completedMembers, failedMembers };
+        }
+
+        // 어제 개구리 기록 수집
+        function getYesterdayFrogRecords() {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toDateString();
+            
+            const frogRecords = [];
+            const noRecordMembers = [];
+
+            members.forEach(member => {
+                const memberRecord = mustRecords[member.id]?.[yesterdayStr];
+                if (memberRecord && memberRecord.frog && memberRecord.frog.some(f => f)) {
+                    frogRecords.push({
+                        name: member.name,
+                        frogs: memberRecord.frog.filter(f => f) // 빈 값 제거
+                    });
+                } else {
+                    noRecordMembers.push(member.name);
+                }
+            });
+
+            return { frogRecords, noRecordMembers };
+        }
+
+        // 텔레그램 메시지 형식화
+        function formatTelegramMessage() {
+            const now = new Date();
+            const dateStr = now.getFullYear().toString().slice(-2) + 
+                           String(now.getMonth() + 1).padStart(2, '0') + 
+                           String(now.getDate()).padStart(2, '0');
+
+            const { completedMembers, failedMembers } = getWakeUpStatus();
+            const { frogRecords, noRecordMembers } = getYesterdayFrogRecords();
+
+            let message = `${dateStr} (오늘 날짜)\n\n`;
+
+            // 기상 현황
+            message += `<기상 완료 멤버>\n`;
+            if (completedMembers.length > 0) {
+                completedMembers.forEach(name => {
+                    message += `- ${name}\n`;
+                });
+            } else {
+                message += `- 없음\n`;
+            }
+
+            message += `\n<기상 실패 멤버>\n`;
+            if (failedMembers.length > 0) {
+                failedMembers.forEach(name => {
+                    message += `- ${name}\n`;
+                });
+            } else {
+                message += `- 없음\n`;
+            }
+
+            message += `\n=======\n\n`;
+
+            // 어제 개구리 기록
+            message += `${dateStr} (오늘 날짜)\n\n`;
+            message += `<🐸 개구리 기록>\n`;
+
+            if (frogRecords.length > 0) {
+                frogRecords.forEach(record => {
+                    message += `- ${record.name}\n`;
+                    record.frogs.forEach((frog, index) => {
+                        message += `${index + 1}. ${frog}\n`;
+                    });
+                    message += `\n`;
+                });
+            } else {
+                message += `- 없음\n\n`;
+            }
+
+            message += `<개구리 미작성 멤버>\n`;
+            if (noRecordMembers.length > 0) {
+                noRecordMembers.forEach(name => {
+                    message += `- ${name}\n`;
+                });
+            } else {
+                message += `- 없음\n`;
+            }
+
+            return message;
+        }
+
+        // 텔레그램 메시지 전송
+        async function sendTelegramMessage(message) {
+            try {
+                const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chat_id: TELEGRAM_CHAT_ID,
+                        text: message,
+                        parse_mode: 'HTML'
+                    })
+                });
+
+                const result = await response.json();
+                if (result.ok) {
+                    console.log('텔레그램 메시지 전송 성공:', result);
+                } else {
+                    console.error('텔레그램 메시지 전송 실패:', result);
+                }
+            } catch (error) {
+                console.error('텔레그램 전송 오류:', error);
+            }
+        }
+
+        // 매일 05:03에 자동 보고서 전송
+        function scheduleDailyReport() {
+            const now = new Date();
+            const targetTime = new Date();
+            targetTime.setHours(5, 3, 0, 0); // 05:03
+
+            // 오늘 05:03이 지났으면 내일 05:03으로 설정
+            if (now > targetTime) {
+                targetTime.setDate(targetTime.getDate() + 1);
+            }
+
+            const timeUntilTarget = targetTime.getTime() - now.getTime();
+
+            setTimeout(() => {
+                // 첫 번째 전송
+                const message = formatTelegramMessage();
+                sendTelegramMessage(message);
+                
+                // 매일 05:03에 반복 실행
+                setInterval(() => {
+                    const dailyMessage = formatTelegramMessage();
+                    sendTelegramMessage(dailyMessage);
+                }, 24 * 60 * 60 * 1000); // 24시간마다
+            }, timeUntilTarget);
+
+            console.log(`다음 보고서 전송 예정: ${targetTime.toLocaleString()}`);
+        }
+
+        // 수동으로 텔레그램 보고서 전송 (테스트용)
+        function sendManualReport() {
+            const message = formatTelegramMessage();
+            sendTelegramMessage(message);
+            alert('텔레그램 보고서를 전송했습니다!');
         }
