@@ -1236,6 +1236,7 @@ h1 {
             padding: 1.5rem;
             border: 1px solid #e9ecef;
             min-width: max-content;
+            align-items: start;
         }
 
         /* 멤버별 기상 현황 컨테이너 */
@@ -1278,6 +1279,16 @@ h1 {
         }
 
         /* 멤버별 기상 현황 헤더 */
+        .member-calendar-header {
+            display: grid;
+            gap: 2px;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            min-width: max-content;
+            align-items: start;
+        }
+
         .member-name-header {
             background: #e3f2fd;
             padding: 0.75rem;

@@ -885,18 +885,21 @@ function calculateScore(memberId, month, year) {
 
         // 멤버별 기상 현황 그리드 업데이트
         function updateMemberCalendarGrid() {
-            const memberCalendarHeader = document.getElementById('memberCalendarHeader');
-            const memberCalendarGrid = document.getElementById('memberCalendarGrid');
+            const memberCalendarContainer = document.getElementById('memberCalendarContainer');
             const selectedYear = parseInt(document.getElementById('yearSelect').value);
             const selectedMonth = parseInt(document.getElementById('monthSelect').value);
             
-            if (!memberCalendarHeader || !memberCalendarGrid) return;
+            if (!memberCalendarContainer) return;
             
             // 해당 월의 실제 날짜 수 계산
             const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
             
-            // 날짜와 요일 헤더 생성
-            let headerHTML = `<div class="member-name-header" style="display: grid; grid-template-columns: 120px repeat(${daysInMonth}, 1fr); gap: 2px;">멤버</div>`;
+            // 전체 그리드 HTML 생성 (헤더와 멤버 행을 하나의 컨테이너에)
+            let fullGridHTML = '';
+            
+            // 헤더 행 생성
+            fullGridHTML += `<div class="member-calendar-header" style="display: grid; grid-template-columns: 120px repeat(${daysInMonth}, 1fr); gap: 2px; margin-bottom: 1rem;">`;
+            fullGridHTML += `<div class="member-name-header">멤버</div>`;
             
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(selectedYear, selectedMonth - 1, day);
@@ -904,21 +907,19 @@ function calculateScore(memberId, month, year) {
                 const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
                 const dayName = dayNames[dayOfWeek];
                 
-                headerHTML += `
+                fullGridHTML += `
                     <div class="date-header">
                         <div class="day-name">${dayName}</div>
                         <div class="date-number">${day}</div>
                     </div>
                 `;
             }
+            fullGridHTML += '</div>';
             
-            memberCalendarHeader.innerHTML = headerHTML;
-            
-            // 멤버별 기상 현황 그리드 생성
-            let gridHTML = '';
-            
+            // 멤버별 기상 현황 행 생성
             members.forEach(member => {
-                let memberRow = `<div class="member-name">${member.name}</div>`;
+                fullGridHTML += `<div class="member-row" style="display: grid; grid-template-columns: 120px repeat(${daysInMonth}, 1fr); gap: 2px; margin-bottom: 0.5rem;">`;
+                fullGridHTML += `<div class="member-name">${member.name}</div>`;
                 
                 for (let day = 1; day <= daysInMonth; day++) {
                     const date = new Date(selectedYear, selectedMonth - 1, day);
@@ -940,13 +941,13 @@ function calculateScore(memberId, month, year) {
                         cellContent = '';
                     }
                     
-                    memberRow += `<div class="calendar-cell ${cellClass}">${cellContent}</div>`;
+                    fullGridHTML += `<div class="calendar-cell ${cellClass}">${cellContent}</div>`;
                 }
                 
-                gridHTML += `<div class="member-row" style="display: grid; grid-template-columns: 120px repeat(${daysInMonth}, 1fr); gap: 2px;">${memberRow}</div>`;
+                fullGridHTML += '</div>';
             });
             
-            memberCalendarGrid.innerHTML = gridHTML;
+            memberCalendarContainer.innerHTML = fullGridHTML;
             
             // lucide 아이콘 안전하게 생성
             if (typeof lucide !== 'undefined') {
