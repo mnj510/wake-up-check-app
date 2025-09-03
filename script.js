@@ -2379,15 +2379,14 @@ document.addEventListener('DOMContentLoaded', function() {
             return { frogRecords, noRecordMembers };
         }
 
-        // 텔레그램 메시지 형식화
-        function formatTelegramMessage() {
+        // 기상 현황 메시지 형식화
+        function formatWakeUpMessage() {
             const now = new Date();
             const dateStr = now.getFullYear().toString().slice(-2) + 
                            String(now.getMonth() + 1).padStart(2, '0') + 
                            String(now.getDate()).padStart(2, '0');
 
             const { completedMembers, failedMembers } = getWakeUpStatus();
-            const { frogRecords, noRecordMembers } = getYesterdayFrogRecords();
 
             let message = `${dateStr} (오늘 날짜)\n\n`;
 
@@ -2410,10 +2409,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 message += `- 없음\n`;
             }
 
-            message += `\n=======\n\n`;
+            return message;
+        }
+
+        // 개구리 기록 메시지 형식화
+        function formatFrogMessage() {
+            const now = new Date();
+            const dateStr = now.getFullYear().toString().slice(-2) + 
+                           String(now.getMonth() + 1).padStart(2, '0') + 
+                           String(now.getDate()).padStart(2, '0');
+
+            const { frogRecords, noRecordMembers } = getYesterdayFrogRecords();
+
+            let message = `${dateStr} (오늘 날짜)\n\n`;
 
             // 어제 개구리 기록
-            message += `${dateStr} (오늘 날짜)\n\n`;
             message += `<🐸 개구리 기록>\n`;
 
             if (frogRecords.length > 0) {
@@ -2438,6 +2448,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             return message;
+        }
+
+        // 통합 메시지 형식화 (수동 전송용)
+        function formatTelegramMessage() {
+            const wakeUpMessage = formatWakeUpMessage();
+            const frogMessage = formatFrogMessage();
+            
+            return wakeUpMessage + '\n=======\n\n' + frogMessage;
         }
 
         // 텔레그램 메시지 전송
@@ -2466,32 +2484,57 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // 매일 05:03에 자동 보고서 전송
+        // 매일 05:25와 05:26에 분리된 보고서 전송
         function scheduleDailyReport() {
             const now = new Date();
-            const targetTime = new Date();
-            targetTime.setHours(5, 3, 0, 0); // 05:03
+            
+            // 05:25 (기상 현황)
+            const wakeUpTime = new Date();
+            wakeUpTime.setHours(5, 25, 0, 0);
+            
+            // 05:26 (개구리 기록)
+            const frogTime = new Date();
+            frogTime.setHours(5, 26, 0, 0);
 
-            // 오늘 05:03이 지났으면 내일 05:03으로 설정
-            if (now > targetTime) {
-                targetTime.setDate(targetTime.getDate() + 1);
+            // 오늘 해당 시간이 지났으면 내일로 설정
+            if (now > wakeUpTime) {
+                wakeUpTime.setDate(wakeUpTime.getDate() + 1);
+            }
+            if (now > frogTime) {
+                frogTime.setDate(frogTime.getDate() + 1);
             }
 
-            const timeUntilTarget = targetTime.getTime() - now.getTime();
+            const timeUntilWakeUp = wakeUpTime.getTime() - now.getTime();
+            const timeUntilFrog = frogTime.getTime() - now.getTime();
 
+            // 기상 현황 전송 스케줄링 (05:25)
             setTimeout(() => {
-                // 첫 번째 전송
-                const message = formatTelegramMessage();
-                sendTelegramMessage(message);
+                // 첫 번째 기상 현황 전송
+                const wakeUpMessage = formatWakeUpMessage();
+                sendTelegramMessage(wakeUpMessage);
                 
-                // 매일 05:03에 반복 실행
+                // 매일 05:25에 반복 실행
                 setInterval(() => {
-                    const dailyMessage = formatTelegramMessage();
-                    sendTelegramMessage(dailyMessage);
+                    const dailyWakeUpMessage = formatWakeUpMessage();
+                    sendTelegramMessage(dailyWakeUpMessage);
                 }, 24 * 60 * 60 * 1000); // 24시간마다
-            }, timeUntilTarget);
+            }, timeUntilWakeUp);
 
-            console.log(`다음 보고서 전송 예정: ${targetTime.toLocaleString()}`);
+            // 개구리 기록 전송 스케줄링 (05:26)
+            setTimeout(() => {
+                // 첫 번째 개구리 기록 전송
+                const frogMessage = formatFrogMessage();
+                sendTelegramMessage(frogMessage);
+                
+                // 매일 05:26에 반복 실행
+                setInterval(() => {
+                    const dailyFrogMessage = formatFrogMessage();
+                    sendTelegramMessage(dailyFrogMessage);
+                }, 24 * 60 * 60 * 1000); // 24시간마다
+            }, timeUntilFrog);
+
+            console.log(`다음 기상 현황 전송 예정: ${wakeUpTime.toLocaleString()}`);
+            console.log(`다음 개구리 기록 전송 예정: ${frogTime.toLocaleString()}`);
         }
 
         // 수동으로 텔레그램 보고서 전송 (테스트용)
