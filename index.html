@@ -358,6 +358,36 @@
                         </div>
                     </div>
 
+                    <!-- 관리자: 기록 수정 섹션 -->
+                    <div id="recordEditSection" class="card hidden">
+                        <h3 class="card-title">기록 수정</h3>
+                        <div class="must-card">
+                            <h3 class="section-title">📋 내일 우선순위 MUST 5가지</h3>
+                            <div class="must-inputs">
+                                <input type="text" id="mustEdit1" placeholder="MUST 1" class="must-input">
+                                <input type="text" id="mustEdit2" placeholder="MUST 2" class="must-input">
+                                <input type="text" id="mustEdit3" placeholder="MUST 3" class="must-input">
+                                <input type="text" id="mustEdit4" placeholder="MUST 4" class="must-input">
+                                <input type="text" id="mustEdit5" placeholder="MUST 5" class="must-input">
+                            </div>
+                        </div>
+                        <div class="must-card">
+                            <h3 class="section-title">🐸 개구리 3가지</h3>
+                            <div class="frog-inputs">
+                                <input type="text" id="frogEdit1" placeholder="개구리 1" class="must-input">
+                                <input type="text" id="frogEdit2" placeholder="개구리 2" class="must-input">
+                                <input type="text" id="frogEdit3" placeholder="개구리 3" class="must-input">
+                            </div>
+                        </div>
+                        <div class="must-card">
+                            <h3 class="card-title">하루 복기</h3>
+                            <textarea id="dailyReviewEdit" class="daily-review-textarea" placeholder="해당 날짜의 하루 복기"></textarea>
+                        </div>
+                        <div class="must-action-buttons">
+                            <button class="btn btn-primary" onclick="saveMustEdit()">수정 저장</button>
+                        </div>
+                    </div>
+
                     <!-- 안내 메시지 -->
                     <div class="guide-box">
                         <p style="color: #f57c00; margin: 0;">

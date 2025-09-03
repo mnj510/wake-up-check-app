@@ -1420,6 +1420,7 @@ async function handleFrogCheck() {
             const selectedDate = datePicker.value;
             const selectedDateTitle = document.getElementById('selectedDateTitle');
             const recordDisplay = document.getElementById('recordDisplay');
+            const recordEditSection = document.getElementById('recordEditSection');
             
             if (!selectedDate) return;
             
@@ -1480,6 +1481,79 @@ async function handleFrogCheck() {
                 }
             } else {
                 recordDisplay.innerHTML = '<div class="no-record-message">해당 날짜에 기록이 없습니다.</div>';
+            }
+            
+            // 관리자 편집 섹션 토글 및 값 채우기
+            if (currentUser.isAdmin) {
+                if (record) {
+                    recordEditSection.classList.remove('hidden');
+                    const must = record.must || [];
+                    document.getElementById('mustEdit1').value = must[0] || '';
+                    document.getElementById('mustEdit2').value = must[1] || '';
+                    document.getElementById('mustEdit3').value = must[2] || '';
+                    document.getElementById('mustEdit4').value = must[3] || '';
+                    document.getElementById('mustEdit5').value = must[4] || '';
+                    const frog = record.frog || [];
+                    document.getElementById('frogEdit1').value = frog[0] || '';
+                    document.getElementById('frogEdit2').value = frog[1] || '';
+                    document.getElementById('frogEdit3').value = frog[2] || '';
+                    document.getElementById('dailyReviewEdit').value = record.dailyReview || '';
+                } else {
+                    recordEditSection.classList.remove('hidden');
+                    document.getElementById('mustEdit1').value = '';
+                    document.getElementById('mustEdit2').value = '';
+                    document.getElementById('mustEdit3').value = '';
+                    document.getElementById('mustEdit4').value = '';
+                    document.getElementById('mustEdit5').value = '';
+                    document.getElementById('frogEdit1').value = '';
+                    document.getElementById('frogEdit2').value = '';
+                    document.getElementById('frogEdit3').value = '';
+                    document.getElementById('dailyReviewEdit').value = '';
+                }
+            } else if (recordEditSection) {
+                recordEditSection.classList.add('hidden');
+            }
+        }
+
+        // 관리자: MUST 기록 수정 저장
+        async function saveMustEdit() {
+            if (!currentUser?.isAdmin) return;
+            const selectedMember = document.getElementById('mustMemberSelect').value;
+            const datePicker = document.getElementById('recordDatePicker');
+            if (!selectedMember) { alert('멤버를 선택해주세요.'); return; }
+            if (!datePicker.value) { alert('날짜를 선택해주세요.'); return; }
+            
+            const dateStr = new Date(datePicker.value).toDateString();
+            const must = [
+                document.getElementById('mustEdit1').value.trim(),
+                document.getElementById('mustEdit2').value.trim(),
+                document.getElementById('mustEdit3').value.trim(),
+                document.getElementById('mustEdit4').value.trim(),
+                document.getElementById('mustEdit5').value.trim()
+            ];
+            const frog = [
+                document.getElementById('frogEdit1').value.trim(),
+                document.getElementById('frogEdit2').value.trim(),
+                document.getElementById('frogEdit3').value.trim()
+            ];
+            const dailyReview = document.getElementById('dailyReviewEdit').value.trim();
+            
+            const recordData = { type: 'creation', must, frog, dailyReview, timestamp: new Date().toISOString() };
+            
+            try {
+                const { error } = await supabase
+                    .from('must_records')
+                    .upsert([{ member_id: selectedMember, date: dateStr, content: recordData }], { onConflict: 'member_id,date' });
+                if (error) throw error;
+                
+                if (!mustRecords[selectedMember]) mustRecords[selectedMember] = {};
+                mustRecords[selectedMember][dateStr] = recordData;
+                
+                alert('수정 사항이 저장되었습니다.');
+                loadMustRecord();
+            } catch (e) {
+                console.error('MUST 기록 수정 저장 오류:', e);
+                alert('저장 중 오류가 발생했습니다.');
             }
         }
 
