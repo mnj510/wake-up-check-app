@@ -842,10 +842,30 @@ function handleFrogCheck() {
             
             const dailyReview = document.getElementById('dailyReview').value.trim();
             
+            // 날짜 계산
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            // 날짜 포맷팅 (YYMMDD 형식)
+            const todayStr = today.getFullYear().toString().slice(-2) + 
+                           String(today.getMonth() + 1).padStart(2, '0') + 
+                           String(today.getDate()).padStart(2, '0');
+            const tomorrowStr = tomorrow.getFullYear().toString().slice(-2) + 
+                              String(tomorrow.getMonth() + 1).padStart(2, '0') + 
+                              String(tomorrow.getDate()).padStart(2, '0');
+            
+            // 멤버 이름 (현재 로그인한 사용자)
+            const memberName = currentUser ? currentUser.name : '사용자';
+            
             let content = '';
             
+            // 헤더 (다음 날 날짜 + 멤버 이름)
+            content += `${tomorrowStr} ${memberName}\n\n`;
+            
+            // MUST 5가지
             if (must1 || must2 || must3 || must4 || must5) {
-                content += '📋 내일 우선순위 MUST 5가지\n';
+                content += '[📋 우선순위 MUST 5가지]\n';
                 if (must1) content += `1. ${must1}\n`;
                 if (must2) content += `2. ${must2}\n`;
                 if (must3) content += `3. ${must3}\n`;
@@ -853,21 +873,23 @@ function handleFrogCheck() {
                 if (must5) content += `5. ${must5}\n\n`;
             }
             
+            // 개구리 3가지
             if (frog1 || frog2 || frog3) {
-                content += '🐸 개구리 3가지\n';
-                if (frog1) content += `• ${frog1}\n`;
-                if (frog2) content += `• ${frog2}\n`;
-                if (frog3) content += `• ${frog3}\n\n`;
+                content += '[🐸 개구리 3가지]\n';
+                if (frog1) content += `1. ${frog1}\n`;
+                if (frog2) content += `2. ${frog2}\n`;
+                if (frog3) content += `3. ${frog3}\n\n`;
             }
             
+            // 하루 복기 (오늘 날짜)
             if (dailyReview) {
-                content += '📝 하루 복기\n';
+                content += `[${todayStr} 하루 복기]\n`;
                 content += dailyReview;
             }
             
             if (content) {
                 navigator.clipboard.writeText(content).then(() => {
-                    alert('복사되었습니다!');
+                    alert('복사되었습니다! 텔레그램에 바로 붙여넣기 할 수 있습니다.');
                 });
             } else {
                 alert('복사할 내용이 없습니다.');
