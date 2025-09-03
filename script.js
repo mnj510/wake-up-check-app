@@ -757,76 +757,231 @@ function handleFrogCheck() {
     }
 }
 
-// MUST 페이지 업데이트
-function updateMustPage() {
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    const todayStr = today.toDateString();
-    const yesterdayStr = yesterday.toDateString();
-    
-    // 어제 기록 표시
-    const yesterdayRecord = mustRecords[currentUser.id]?.[yesterdayStr] || '';
-    const yesterdayElement = document.getElementById('yesterdayRecord');
-    
-    if (yesterdayRecord) {
-        yesterdayElement.textContent = yesterdayRecord;
-        yesterdayElement.classList.remove('empty');
-    } else {
-        yesterdayElement.textContent = '어제 기록이 없습니다.';
-        yesterdayElement.classList.add('empty');
-    }
-    
-    // 오늘 기록 확인
-    const todayRecord = mustRecords[currentUser.id]?.[todayStr];
-    const todayContainer = document.getElementById('todayMustContainer');
-    const completedMust = document.getElementById('completedMust');
-    
-    if (todayRecord) {
-        // 이미 기록된 경우
-        todayContainer.classList.add('hidden');
-        completedMust.classList.remove('hidden');
-        completedMust.innerHTML = `
-            <div style="white-space: pre-wrap;">${todayRecord}</div>
-            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 2px solid #c8e6c9; color: #4caf50; font-size: 0.9rem;">
-                ✓ 오늘 기록 완료! 1점 획득
-            </div>
-        `;
-    } else {
-        // 아직 기록하지 않은 경우
-        todayContainer.classList.remove('hidden');
-        completedMust.classList.add('hidden');
-        document.getElementById('todayMust').value = '';
-    }
-}
-
-// MUST 기록 저장
-function saveMustRecord() {
-    const content = document.getElementById('todayMust').value.trim();
-    if (content) {
-        const today = new Date().toDateString();
-        
-        if (!mustRecords[currentUser.id]) {
-            mustRecords[currentUser.id] = {};
+        // MUST 탭 전환
+        function switchMustTab(tabName) {
+            const creationTab = document.getElementById('mustCreationTab');
+            const recordTab = document.getElementById('mustRecordTab');
+            const creationBtn = document.querySelector('.must-tab:first-child');
+            const recordBtn = document.querySelector('.must-tab:last-child');
+            
+            // 모든 탭 비활성화
+            creationTab.classList.add('hidden');
+            recordTab.classList.add('hidden');
+            creationBtn.classList.remove('active');
+            recordBtn.classList.remove('active');
+            
+            if (tabName === 'creation') {
+                creationTab.classList.remove('hidden');
+                creationBtn.classList.add('active');
+            } else if (tabName === 'record') {
+                recordTab.classList.remove('hidden');
+                recordBtn.classList.add('active');
+                // 날짜 선택기 초기화
+                initializeDatePicker();
+            }
         }
-        
-        mustRecords[currentUser.id][today] = content;
-        
-        alert('MUST 기록이 저장되었습니다! 1점 획득했습니다.');
-        updateMustPage();
-    }
-}
 
-// MUST 기록 복사
-function copyMustRecord() {
-    const content = document.getElementById('todayMust').value;
-    if (content) {
-        navigator.clipboard.writeText(content).then(() => {
-            alert('복사되었습니다!');
-        });
-    }
-}
+        // MUST 페이지 업데이트
+        function updateMustPage() {
+            // 기본적으로 작성 탭을 보여줌
+            switchMustTab('creation');
+        }
+
+        // MUST 기록 저장 (새로운 형식)
+        function saveMustCreation() {
+            const must1 = document.getElementById('must1').value.trim();
+            const must2 = document.getElementById('must2').value.trim();
+            const must3 = document.getElementById('must3').value.trim();
+            const must4 = document.getElementById('must4').value.trim();
+            const must5 = document.getElementById('must5').value.trim();
+            
+            const frog1 = document.getElementById('frog1').value.trim();
+            const frog2 = document.getElementById('frog2').value.trim();
+            const frog3 = document.getElementById('frog3').value.trim();
+            
+            const dailyReview = document.getElementById('dailyReview').value.trim();
+            
+            if (!must1 && !must2 && !must3 && !must4 && !must5 && 
+                !frog1 && !frog2 && !frog3 && !dailyReview) {
+                alert('최소한 하나의 항목을 입력해주세요.');
+                return;
+            }
+            
+            const today = new Date().toDateString();
+            
+            if (!mustRecords[currentUser.id]) {
+                mustRecords[currentUser.id] = {};
+            }
+            
+            // 새로운 형식으로 저장
+            mustRecords[currentUser.id][today] = {
+                type: 'creation',
+                must: [must1, must2, must3, must4, must5],
+                frog: [frog1, frog2, frog3],
+                dailyReview: dailyReview,
+                timestamp: new Date().toISOString()
+            };
+            
+            alert('MUST 기록이 저장되었습니다! 1점 획득했습니다.');
+            
+            // 폼 초기화
+            clearMustForm();
+        }
+
+        // MUST 기록 복사 (새로운 형식)
+        function copyMustCreation() {
+            const must1 = document.getElementById('must1').value.trim();
+            const must2 = document.getElementById('must2').value.trim();
+            const must3 = document.getElementById('must3').value.trim();
+            const must4 = document.getElementById('must4').value.trim();
+            const must5 = document.getElementById('must5').value.trim();
+            
+            const frog1 = document.getElementById('frog1').value.trim();
+            const frog2 = document.getElementById('frog2').value.trim();
+            const frog3 = document.getElementById('frog3').value.trim();
+            
+            const dailyReview = document.getElementById('dailyReview').value.trim();
+            
+            let content = '';
+            
+            if (must1 || must2 || must3 || must4 || must5) {
+                content += '📋 내일 우선순위 MUST 5가지\n';
+                if (must1) content += `1. ${must1}\n`;
+                if (must2) content += `2. ${must2}\n`;
+                if (must3) content += `3. ${must3}\n`;
+                if (must4) content += `4. ${must4}\n`;
+                if (must5) content += `5. ${must5}\n\n`;
+            }
+            
+            if (frog1 || frog2 || frog3) {
+                content += '🐸 개구리 3가지\n';
+                if (frog1) content += `• ${frog1}\n`;
+                if (frog2) content += `• ${frog2}\n`;
+                if (frog3) content += `• ${frog3}\n\n`;
+            }
+            
+            if (dailyReview) {
+                content += '📝 하루 복기\n';
+                content += dailyReview;
+            }
+            
+            if (content) {
+                navigator.clipboard.writeText(content).then(() => {
+                    alert('복사되었습니다!');
+                });
+            } else {
+                alert('복사할 내용이 없습니다.');
+            }
+        }
+
+        // MUST 폼 초기화
+        function clearMustForm() {
+            document.getElementById('must1').value = '';
+            document.getElementById('must2').value = '';
+            document.getElementById('must3').value = '';
+            document.getElementById('must4').value = '';
+            document.getElementById('must5').value = '';
+            document.getElementById('frog1').value = '';
+            document.getElementById('frog2').value = '';
+            document.getElementById('frog3').value = '';
+            document.getElementById('dailyReview').value = '';
+        }
+
+        // 날짜 선택기 초기화
+        function initializeDatePicker() {
+            const datePicker = document.getElementById('recordDatePicker');
+            const today = new Date();
+            
+            // 오늘 날짜를 기본값으로 설정
+            datePicker.value = today.toISOString().split('T')[0];
+            
+            // 오늘 날짜의 기록이 있으면 자동으로 로드
+            loadMustRecord();
+        }
+
+        // 선택된 날짜의 MUST 기록 로드
+        function loadMustRecord() {
+            const datePicker = document.getElementById('recordDatePicker');
+            const selectedDate = datePicker.value;
+            const selectedDateTitle = document.getElementById('selectedDateTitle');
+            const recordDisplay = document.getElementById('recordDisplay');
+            
+            if (!selectedDate) return;
+            
+            // 날짜 형식 변환
+            const date = new Date(selectedDate);
+            const dateStr = date.toDateString();
+            const formattedDate = `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+            
+            selectedDateTitle.textContent = formattedDate;
+            
+            // 해당 날짜의 기록 확인
+            const record = mustRecords[currentUser.id]?.[dateStr];
+            
+            if (record) {
+                if (record.type === 'creation') {
+                    // 새로운 형식의 기록 표시
+                    let displayContent = '';
+                    
+                    if (record.must && record.must.some(m => m)) {
+                        displayContent += '📋 내일 우선순위 MUST 5가지\n';
+                        record.must.forEach((item, index) => {
+                            if (item) {
+                                displayContent += `${index + 1}. ${item}\n`;
+                            }
+                        });
+                        displayContent += '\n';
+                    }
+                    
+                    if (record.frog && record.frog.some(f => f)) {
+                        displayContent += '🐸 개구리 3가지\n';
+                        record.frog.forEach((item, index) => {
+                            if (item) {
+                                displayContent += `• ${item}\n`;
+                            }
+                        });
+                        displayContent += '\n';
+                    }
+                    
+                    if (record.dailyReview) {
+                        displayContent += '📝 하루 복기\n';
+                        displayContent += record.dailyReview;
+                    }
+                    
+                    recordDisplay.innerHTML = `<div class="record-content">${displayContent}</div>`;
+                } else {
+                    // 기존 형식의 기록 표시
+                    recordDisplay.innerHTML = `<div class="record-content">${record}</div>`;
+                }
+            } else {
+                recordDisplay.innerHTML = '<div class="no-record-message">해당 날짜에 기록이 없습니다.</div>';
+            }
+        }
+
+        // 기존 함수들 유지 (하위 호환성)
+        function saveMustRecord() {
+            const content = document.getElementById('todayMust')?.value?.trim();
+            if (content) {
+                const today = new Date().toDateString();
+                
+                if (!mustRecords[currentUser.id]) {
+                    mustRecords[currentUser.id] = {};
+                }
+                
+                mustRecords[currentUser.id][today] = content;
+                
+                alert('MUST 기록이 저장되었습니다! 1점 획득했습니다.');
+            }
+        }
+
+        function copyMustRecord() {
+            const content = document.getElementById('todayMust')?.value;
+            if (content) {
+                navigator.clipboard.writeText(content).then(() => {
+                    alert('복사되었습니다!');
+                });
+            }
+        }
 
 // 관리자 페이지 업데이트
 function updateAdminPage() {
