@@ -896,7 +896,7 @@ function calculateScore(memberId, month, year) {
             const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
             
             // 날짜와 요일 헤더 생성
-            let headerHTML = `<div class="member-name-header" style="grid-template-columns: 120px repeat(${daysInMonth}, 1fr);">멤버</div>`;
+            let headerHTML = `<div class="member-name-header" style="display: grid; grid-template-columns: 120px repeat(${daysInMonth}, 1fr); gap: 2px;">멤버</div>`;
             
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(selectedYear, selectedMonth - 1, day);
@@ -918,7 +918,7 @@ function calculateScore(memberId, month, year) {
             let gridHTML = '';
             
             members.forEach(member => {
-                let memberRow = `<div class="member-name" style="grid-template-columns: 120px repeat(${daysInMonth}, 1fr);">${member.name}</div>`;
+                let memberRow = `<div class="member-name">${member.name}</div>`;
                 
                 for (let day = 1; day <= daysInMonth; day++) {
                     const date = new Date(selectedYear, selectedMonth - 1, day);
@@ -943,7 +943,7 @@ function calculateScore(memberId, month, year) {
                     memberRow += `<div class="calendar-cell ${cellClass}">${cellContent}</div>`;
                 }
                 
-                gridHTML += `<div class="member-row">${memberRow}</div>`;
+                gridHTML += `<div class="member-row" style="display: grid; grid-template-columns: 120px repeat(${daysInMonth}, 1fr); gap: 2px;">${memberRow}</div>`;
             });
             
             memberCalendarGrid.innerHTML = gridHTML;

@@ -1284,7 +1284,6 @@ h1 {
             text-align: center;
             color: #1976d2;
             font-weight: 600;
-            display: flex;
             align-items: center;
             justify-content: center;
         }
@@ -1333,7 +1332,6 @@ h1 {
         /* 멤버별 기상 현황 행 */
         .member-row {
             display: grid;
-            grid-template-columns: 120px repeat(31, 1fr);
             gap: 2px;
             margin-bottom: 0.5rem;
         }
