@@ -248,9 +248,8 @@ function updateDateTitles() {
                 currentUser = members.find(m => m.id === 'mnj510');
                 
                 if (!currentUser) {
-                    alert('관리자 계정을 찾을 수 없습니다. 기본 데이터를 초기화합니다.');
-                    initializeDefaultData();
-                    currentUser = members.find(m => m.id === 'mnj510');
+                    alert('관리자 계정이 등록되어 있지 않습니다. Supabase의 members 테이블에 관리자 계정을 추가해 주세요.');
+                    return;
                 }
                 
                 console.log('관리자 로그인 성공:', currentUser);
