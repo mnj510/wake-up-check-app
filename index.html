@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기상 체크 앱</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- 로그인 화면 -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-card fade-in">
+            <div class="logo">
+                <i data-lucide="clock"></i>
+            </div>
+            <h1>기상 체크 앱</h1>
+            
+            <div class="input-group">
+                <input type="text" id="loginId" placeholder="관리자 ID 또는 멤버 코드" onkeypress="if(event.key==='Enter') handleLogin()">
+            </div>
+            
+            <div class="input-group">
+                <input type="password" id="loginPassword" placeholder="비밀번호 (관리자만)" onkeypress="if(event.key==='Enter') handleLogin()">
+            </div>
+            
+            <button class="btn btn-primary" onclick="handleLogin()">로그인</button>
+        </div>
+    </div>
+
+    <!-- 메인 앱 -->
+    <div id="appScreen" class="app-container">
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <i data-lucide="clock"></i>
+                    <span class="header-title">기상 체크 앱</span>
+                </div>
+                <div class="header-right">
+                    <span class="user-info" id="userInfo">사용자님 환영합니다</span>
+                    <a href="#" class="logout-btn" onclick="handleLogout()">로그아웃</a>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- 네비게이션 -->
+            <nav class="nav-tabs">
+                <button class="nav-tab active" onclick="showPage('dashboard')">
+                    <i data-lucide="bar-chart-3"></i>
+                    <span>대시보드</span>
+                </button>
+                <button class="nav-tab" onclick="showPage('check')">
+                    <i data-lucide="check-circle"></i>
+                    <span>기상 체크</span>
+                </button>
+                <button class="nav-tab" onclick="showPage('must')">
+                    <i data-lucide="calendar"></i>
+                    <span>MUST 기록</span>
+                </button>
+                <button class="nav-tab hidden" id="adminTab" onclick="showPage('admin')">
+                    <i data-lucide="settings"></i>
+                    <span>관리자</span>
+                </button>
+            </nav>
+
+            <!-- 대시보드 페이지 -->
+            <div id="dashboardPage" class="page">
+                <!-- 월별 선택 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">월별 조회</h2>
+                        <div class="month-selector">
+                            <select id="yearSelect">
+                                <option value="2024">2024년</option>
+                                <option value="2025" selected>2025년</option>
+                            </select>
+                            <select id="monthSelect">
+                                <option value="1">1월</option>
+                                <option value="2">2월</option>
+                                <option value="3">3월</option>
+                                <option value="4">4월</option>
+                                <option value="5">5월</option>
+                                <option value="6">6월</option>
+                                <option value="7">7월</option>
+                                <option value="8">8월</option>
+                                <option value="9">9월</option>
+                                <option value="10">10월</option>
+                                <option value="11">11월</option>
+                                <option value="12">12월</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 통계 카드 -->
+                <div class="stats-grid" id="statsGrid">
+                    <!-- 통계 카드들이 여기에 동적으로 생성됩니다 -->
+                </div>
+
+                <!-- 멤버별 순위 -->
+                <div class="card">
+                    <h3 class="card-title">멤버별 점수 순위</h3>
+                    <div class="ranking-list" id="rankingList">
+                        <!-- 순위가 여기에 동적으로 생성됩니다 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 기상 체크 페이지 -->
+            <div id="checkPage" class="page hidden">
+                <!-- 실시간 시계 -->
+                <div class="card">
+                    <h2 class="card-title">현재 시간</h2>
+                    <div class="clock-display">
+                        <div class="time" id="currentTime">00:00:00</div>
+                        <div class="date" id="currentDate">2025년 1월 1일</div>
+                    </div>
+                </div>
+
+                <!-- 오늘의 기록 -->
+                <div class="card">
+                    <h3 class="card-title">오늘의 기록</h3>
+                    <div class="today-records">
+                        <div class="record-item" id="wakeUpRecord">
+                            <i data-lucide="check-circle"></i>
+                            <h4>기상 체크</h4>
+                            <span id="wakeUpStatus">미완료</span>
+                        </div>
+                        <div class="record-item" id="frogRecord">
+                            <i data-lucide="award"></i>
+                            <h4>개구리 잡기</h4>
+                            <span id="frogStatus">미완료</span>
+                        </div>
+                        <div class="record-item" id="mustRecord">
+                            <i data-lucide="calendar"></i>
+                            <h4>MUST 기록</h4>
+                            <span>MUST 탭에서 확인</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 체크 버튼들 -->
+                <div class="check-buttons">
+                    <div class="check-card">
+                        <h4>기상 완료</h4>
+                        <p>00:00 ~ 04:59 사이에만 체크 가능 (1점)</p>
+                        <button class="check-btn primary" id="wakeUpBtn" onclick="handleWakeUpCheck()">
+                            기상 완료!
+                        </button>
+                    </div>
+
+                    <div class="check-card">
+                        <h4>개구리 잡기 완료</h4>
+                        <p>기상 체크 후 언제든지 가능 (1점)</p>
+                        <button class="check-btn success" id="frogBtn" onclick="handleFrogCheck()">
+                            개구리 잡기!
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 가이드 -->
+                <div class="guide-box">
+                    <h4>점수 획득 방법</h4>
+                    <ul>
+                        <li>기상 완료 (00:00-04:59): 1점</li>
+                        <li>개구리 잡기 (기상 체크 후): 1점</li>
+                        <li>MUST 기록 (23:59까지): 1점</li>
+                        <li class="highlight">하루 최대 3점까지 획득 가능!</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- MUST 기록 페이지 -->
+            <div id="mustPage" class="page hidden">
+                <div class="card">
+                    <h2 class="card-title">MUST 기록</h2>
+                    
+                    <div class="must-container">
+                        <!-- 어제 기록 -->
+                        <div class="must-section">
+                            <h3 id="yesterdayTitle">어제 (9/2)</h3>
+                            <div class="must-display empty" id="yesterdayRecord">
+                                어제 기록이 없습니다.
+                            </div>
+                        </div>
+
+                        <!-- 오늘 기록 -->
+                        <div class="must-section">
+                            <h3 id="todayTitle">오늘 (9/3)</h3>
+                            <div id="todayMustContainer">
+                                <textarea 
+                                    class="must-textarea" 
+                                    id="todayMust" 
+                                    placeholder="오늘 해야 할 일을 기록하세요..."
+                                ></textarea>
+                                <div class="must-actions">
+                                    <button class="btn btn-secondary" onclick="copyMustRecord()">
+                                        복사하기
+                                    </button>
+                                    <button class="btn btn-primary" onclick="saveMustRecord()">
+                                        저장하기
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- 완료된 기록 표시 -->
+                            <div class="must-display completed hidden" id="completedMust">
+                                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 2px solid #c8e6c9; color: #4caf50; font-size: 0.9rem;">
+                                    ✓ 오늘 기록 완료! 1점 획득
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 안내 메시지 -->
+                    <div class="guide-box">
+                        <p style="color: #f57c00; margin: 0;">
+                            💡 <strong>안내:</strong> 23:59까지 MUST 기록을 완료하시면 1점을 획득할 수 있습니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 관리자 페이지 -->
+            <div id="adminPage" class="page hidden">
+                <!-- 멤버 추가 -->
+                <div class="card">
+                    <h2 class="card-title">새 멤버 추가</h2>
+                    
+                    <div class="admin-form">
+                        <input type="text" id="newMemberName" placeholder="멤버 이름">
+                        <input type="text" id="newMemberCode" placeholder="멤버 코드 (예: WAKE004)">
+                        <button class="btn btn-primary" onclick="addMember()">
+                            <i data-lucide="user-plus"></i> 추가
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 멤버 목록 -->
+                <div class="card">
+                    <h3 class="card-title">등록된 멤버</h3>
+                    <div class="member-list" id="memberList">
+                        <!-- 멤버 목록이 여기에 동적으로 생성됩니다 -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
