@@ -606,62 +606,98 @@ function calculateScore(memberId, month, year) {
         // Supabase에서 데이터 로드
         async function loadDataFromSupabase() {
             try {
+                console.log('Supabase 데이터 로드 시작...');
+                
                 // 멤버 목록 로드
                 const { data: membersData, error: membersError } = await supabase
                     .from('members')
                     .select('*')
                     .order('name');
                 
-                if (membersError) throw membersError;
-                members = membersData || [];
+                if (membersError) {
+                    console.warn('멤버 데이터 로드 실패, 기본 데이터 사용:', membersError);
+                    initializeDefaultData();
+                } else {
+                    members = membersData || [];
+                    console.log('멤버 데이터 로드 완료:', members.length + '명');
+                }
                 
                 // 기본 데이터가 없으면 초기화
                 if (members.length === 0) {
+                    console.log('기본 멤버 데이터 초기화');
                     initializeDefaultData();
                 }
                 
                 // 기상 체크 데이터 로드
-                const { data: checkDataResult, error: checkError } = await supabase
-                    .from('check_data')
-                    .select('*');
-                
-                if (checkError) throw checkError;
-                
-                // 데이터를 객체 형태로 변환
-                checkData = {};
-                checkDataResult?.forEach(record => {
-                    if (!checkData[record.member_id]) {
-                        checkData[record.member_id] = {};
+                try {
+                    const { data: checkDataResult, error: checkError } = await supabase
+                        .from('check_data')
+                        .select('*');
+                    
+                    if (checkError) {
+                        console.warn('기상 체크 데이터 로드 실패:', checkError);
+                        checkData = {};
+                    } else {
+                        // 데이터를 객체 형태로 변환
+                        checkData = {};
+                        checkDataResult?.forEach(record => {
+                            if (!checkData[record.member_id]) {
+                                checkData[record.member_id] = {};
+                            }
+                            checkData[record.member_id][record.date] = {
+                                wakeUp: record.wake_up,
+                                frog: record.frog,
+                                must: record.must
+                            };
+                        });
+                        console.log('기상 체크 데이터 로드 완료');
                     }
-                    checkData[record.member_id][record.date] = {
-                        wakeUp: record.wake_up,
-                        frog: record.frog,
-                        must: record.must
-                    };
-                });
+                } catch (error) {
+                    console.warn('기상 체크 데이터 로드 중 오류:', error);
+                    checkData = {};
+                }
                 
                 // MUST 기록 데이터 로드
-                const { data: mustDataResult, error: mustError } = await supabase
-                    .from('must_records')
-                    .select('*');
-                
-                if (mustError) throw mustError;
-                
-                // 데이터를 객체 형태로 변환
-                mustRecords = {};
-                mustDataResult?.forEach(record => {
-                    if (!mustRecords[record.member_id]) {
-                        mustRecords[record.member_id] = {};
+                try {
+                    const { data: mustDataResult, error: mustError } = await supabase
+                        .from('must_records')
+                        .select('*');
+                    
+                    if (mustError) {
+                        console.warn('MUST 기록 데이터 로드 실패:', mustError);
+                        mustRecords = {};
+                    } else {
+                        // 데이터를 객체 형태로 변환
+                        mustRecords = {};
+                        mustDataResult?.forEach(record => {
+                            if (!mustRecords[record.member_id]) {
+                                mustRecords[record.member_id] = {};
+                            }
+                            try {
+                                mustRecords[record.member_id][record.date] = 
+                                    typeof record.content === 'string' 
+                                        ? JSON.parse(record.content) 
+                                        : record.content;
+                            } catch (parseError) {
+                                console.warn('MUST 기록 파싱 오류:', parseError);
+                                mustRecords[record.member_id][record.date] = record.content;
+                            }
+                        });
+                        console.log('MUST 기록 데이터 로드 완료');
                     }
-                    mustRecords[record.member_id][record.date] = record.content;
-                });
+                } catch (error) {
+                    console.warn('MUST 기록 데이터 로드 중 오류:', error);
+                    mustRecords = {};
+                }
                 
                 console.log('Supabase에서 데이터 로드 완료');
                 
             } catch (error) {
-                console.error('Supabase 데이터 로드 오류:', error);
+                console.error('Supabase 데이터 로드 중 치명적 오류:', error);
                 // 기본 데이터로 초기화
                 initializeDefaultData();
+                checkData = {};
+                mustRecords = {};
             }
         }
 
@@ -802,49 +838,72 @@ function calculateScore(memberId, month, year) {
             rankingList.innerHTML = rankingHTML;
         }
 
-// 기상 체크 처리
-async function handleWakeUpCheck() {
-    const now = new Date();
-    const hours = now.getHours();
-    const today = now.toDateString();
-    
-    if (hours >= 0 && hours < 5) {
-        try {
-            // Supabase에 기상 체크 데이터 저장
-            const { error } = await supabase
-                .from('check_data')
-                .upsert([{
-                    member_id: currentUser.id,
-                    date: today,
-                    wake_up: true,
-                    frog: checkData[currentUser.id]?.[today]?.frog || false,
-                    must: checkData[currentUser.id]?.[today]?.must || false
-                }]);
+        // 기상 체크 처리
+        async function handleWakeUpCheck() {
+            const now = new Date();
+            const hours = now.getHours();
+            const today = now.toDateString();
             
-            if (error) throw error;
-            
-            // 로컬 데이터 업데이트
-            if (!checkData[currentUser.id]) {
-                checkData[currentUser.id] = {};
+            if (hours >= 0 && hours < 5) {
+                try {
+                    console.log('기상 체크 저장 시작...');
+                    
+                    // Supabase에 기상 체크 데이터 저장
+                    const { data, error } = await supabase
+                        .from('check_data')
+                        .upsert([{
+                            member_id: currentUser.id,
+                            date: today,
+                            wake_up: true,
+                            frog: checkData[currentUser.id]?.[today]?.frog || false,
+                            must: checkData[currentUser.id]?.[today]?.must || false
+                        }], {
+                            onConflict: 'member_id,date'
+                        });
+                    
+                    if (error) {
+                        console.error('Supabase 저장 오류:', error);
+                        throw error;
+                    }
+                    
+                    console.log('Supabase 저장 성공:', data);
+                    
+                    // 로컬 데이터 업데이트
+                    if (!checkData[currentUser.id]) {
+                        checkData[currentUser.id] = {};
+                    }
+                    
+                    checkData[currentUser.id][today] = {
+                        ...checkData[currentUser.id][today],
+                        wakeUp: true,
+                        wakeUpTime: now.toLocaleTimeString('ko-KR')
+                    };
+                    
+                    alert('기상 체크 완료! 1점 획득했습니다.');
+                    updateWakeUpButton();
+                    
+                } catch (error) {
+                    console.error('기상 체크 저장 오류:', error);
+                    
+                    // 로컬에만 저장 (오프라인 모드)
+                    console.log('로컬에만 저장합니다.');
+                    if (!checkData[currentUser.id]) {
+                        checkData[currentUser.id] = {};
+                    }
+                    
+                    checkData[currentUser.id][today] = {
+                        ...checkData[currentUser.id][today],
+                        wakeUp: true,
+                        wakeUpTime: now.toLocaleTimeString('ko-KR')
+                    };
+                    
+                    alert('기상 체크 완료! 1점 획득했습니다. (로컬 저장)');
+                    updateWakeUpButton();
+                }
+            } else {
+                alert('기상 체크는 00:00 ~ 04:59 사이에만 가능합니다.');
             }
-            
-            checkData[currentUser.id][today] = {
-                ...checkData[currentUser.id][today],
-                wakeUp: true,
-                wakeUpTime: now.toLocaleTimeString('ko-KR')
-            };
-            
-            alert('기상 체크 완료! 1점 획득했습니다.');
-            updateWakeUpButton();
-            
-        } catch (error) {
-            console.error('기상 체크 저장 오류:', error);
-            alert('기상 체크 저장 중 오류가 발생했습니다.');
         }
-    } else {
-        alert('기상 체크는 00:00 ~ 04:59 사이에만 가능합니다.');
-    }
-}
 
 // 개구리 잡기 처리
 async function handleFrogCheck() {
@@ -853,8 +912,10 @@ async function handleFrogCheck() {
     
     if (todayData?.wakeUp) {
         try {
+            console.log('개구리 잡기 저장 시작...');
+            
             // Supabase에 개구리 잡기 데이터 저장
-            const { error } = await supabase
+            const { data, error } = await supabase
                 .from('check_data')
                 .upsert([{
                     member_id: currentUser.id,
@@ -862,9 +923,16 @@ async function handleFrogCheck() {
                     wake_up: true,
                     frog: true,
                     must: checkData[currentUser.id]?.[today]?.must || false
-                }]);
+                }], {
+                    onConflict: 'member_id,date'
+                });
             
-            if (error) throw error;
+            if (error) {
+                console.error('Supabase 저장 오류:', error);
+                throw error;
+            }
+            
+            console.log('Supabase 저장 성공:', data);
             
             // 로컬 데이터 업데이트
             checkData[currentUser.id][today] = {
@@ -877,7 +945,16 @@ async function handleFrogCheck() {
             
         } catch (error) {
             console.error('개구리 잡기 저장 오류:', error);
-            alert('개구리 잡기 저장 중 오류가 발생했습니다.');
+            
+            // 로컬에만 저장 (오프라인 모드)
+            console.log('로컬에만 저장합니다.');
+            checkData[currentUser.id][today] = {
+                ...checkData[currentUser.id][today],
+                frog: true
+            };
+            
+            alert('개구리 잡기 완료! 1점 획득했습니다. (로컬 저장)');
+            updateWakeUpButton();
         }
     } else {
         alert('기상 체크를 먼저 완료해주세요.');
@@ -937,35 +1014,43 @@ async function handleFrogCheck() {
             const today = new Date().toDateString();
             
             try {
-                // Supabase에 MUST 기록 저장
-                const { error } = await supabase
-                    .from('must_records')
-                    .upsert([{
-                        member_id: currentUser.id,
-                        date: today,
-                        content: JSON.stringify({
-                            type: 'creation',
-                            must: [must1, must2, must3, must4, must5],
-                            frog: [frog1, frog2, frog3],
-                            dailyReview: dailyReview,
-                            timestamp: new Date().toISOString()
-                        })
-                    }]);
+                console.log('MUST 기록 저장 시작...');
                 
-                if (error) throw error;
-                
-                // 로컬 데이터 업데이트
-                if (!mustRecords[currentUser.id]) {
-                    mustRecords[currentUser.id] = {};
-                }
-                
-                mustRecords[currentUser.id][today] = {
+                // 저장할 데이터 준비
+                const recordData = {
                     type: 'creation',
                     must: [must1, must2, must3, must4, must5],
                     frog: [frog1, frog2, frog3],
                     dailyReview: dailyReview,
                     timestamp: new Date().toISOString()
                 };
+                
+                console.log('저장할 데이터:', recordData);
+                
+                // Supabase에 MUST 기록 저장
+                const { data, error } = await supabase
+                    .from('must_records')
+                    .upsert([{
+                        member_id: currentUser.id,
+                        date: today,
+                        content: recordData
+                    }], {
+                        onConflict: 'member_id,date'
+                    });
+                
+                if (error) {
+                    console.error('Supabase 저장 오류:', error);
+                    throw error;
+                }
+                
+                console.log('Supabase 저장 성공:', data);
+                
+                // 로컬 데이터 업데이트
+                if (!mustRecords[currentUser.id]) {
+                    mustRecords[currentUser.id] = {};
+                }
+                
+                mustRecords[currentUser.id][today] = recordData;
                 
                 alert('MUST 기록이 저장되었습니다! 1점 획득했습니다.');
                 
@@ -974,7 +1059,30 @@ async function handleFrogCheck() {
                 
             } catch (error) {
                 console.error('MUST 기록 저장 오류:', error);
-                alert('MUST 기록 저장 중 오류가 발생했습니다.');
+                
+                // 오류 상세 정보 표시
+                let errorMessage = 'MUST 기록 저장 중 오류가 발생했습니다.';
+                if (error.message) {
+                    errorMessage += `\n\n오류 내용: ${error.message}`;
+                }
+                if (error.details) {
+                    errorMessage += `\n\n상세 정보: ${error.details}`;
+                }
+                
+                alert(errorMessage);
+                
+                // 로컬에만 저장 (오프라인 모드)
+                console.log('로컬에만 저장합니다.');
+                if (!mustRecords[currentUser.id]) {
+                    mustRecords[currentUser.id] = {};
+                }
+                mustRecords[currentUser.id][today] = {
+                    type: 'creation',
+                    must: [must1, must2, must3, must4, must5],
+                    frog: [frog1, frog2, frog3],
+                    dailyReview: dailyReview,
+                    timestamp: new Date().toISOString()
+                };
             }
         }
 

@@ -80,8 +80,8 @@ ALTER TABLE members ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "모든 사용자가 멤버 목록을 볼 수 있음" ON members
     FOR SELECT USING (true);
 
-CREATE POLICY "관리자만 멤버 추가/수정/삭제 가능" ON members
-    FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "모든 사용자가 멤버 추가/수정/삭제 가능" ON members
+    FOR ALL USING (true);
 ```
 
 ### check_data 테이블
@@ -91,8 +91,8 @@ ALTER TABLE check_data ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "모든 사용자가 기상 체크 데이터를 볼 수 있음" ON check_data
     FOR SELECT USING (true);
 
-CREATE POLICY "자신의 데이터만 추가/수정 가능" ON check_data
-    FOR ALL USING (auth.uid()::text = member_id);
+CREATE POLICY "모든 사용자가 데이터 추가/수정 가능" ON check_data
+    FOR ALL USING (true);
 ```
 
 ### must_records 테이블
@@ -102,9 +102,11 @@ ALTER TABLE must_records ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "모든 사용자가 MUST 기록을 볼 수 있음" ON must_records
     FOR SELECT USING (true);
 
-CREATE POLICY "자신의 데이터만 추가/수정 가능" ON must_records
-    FOR ALL USING (auth.uid()::text = member_id);
+CREATE POLICY "모든 사용자가 데이터 추가/수정 가능" ON must_records
+    FOR ALL USING (true);
 ```
+
+**⚠️ 주의**: 이 설정은 개발/테스트 환경용입니다. 프로덕션에서는 더 엄격한 보안 정책을 적용해야 합니다.
 
 ## 5. 환경 변수 설정
 
