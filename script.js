@@ -1231,23 +1231,9 @@ async function handleFrogCheck() {
                 recordTab.classList.remove('hidden');
                 recordBtn.classList.add('active');
                 
-                // MUST 기록 탭으로 전환 시 날짜 선택기 강제 초기화
-                setTimeout(() => {
-                    console.log('MUST 기록 탭으로 전환 - 날짜 선택기 초기화 시작');
-                    initializeDatePicker();
-                    
-                    // 추가로 한 번 더 초기화하여 확실하게 적용
-                    setTimeout(() => {
-                        const datePicker = document.getElementById('recordDatePicker');
-                        if (datePicker) {
-                            const today = new Date();
-                            const todayString = today.toISOString().split('T')[0];
-                            datePicker.value = todayString;
-                            datePicker.setAttribute('value', todayString);
-                            console.log('날짜 선택기 재초기화 완료:', datePicker.value);
-                        }
-                    }, 200);
-                }, 100);
+                // MUST 기록 탭으로 전환 시 날짜 선택기 즉시 초기화
+                console.log('MUST 기록 탭으로 전환 - 날짜 선택기 즉시 초기화');
+                initializeDatePicker();
             }
         }
 
@@ -1256,10 +1242,8 @@ async function handleFrogCheck() {
             // 기본적으로 작성 탭을 보여줌
             switchMustTab('creation');
             
-            // 페이지 로드 시 날짜 선택기도 초기화 (MUST 기록 탭용)
-            setTimeout(() => {
-                initializeDatePicker();
-            }, 100);
+            // 페이지 로드 시 날짜 선택기도 즉시 초기화 (MUST 기록 탭용)
+            initializeDatePicker();
         }
 
         // MUST 기록 저장 (새로운 형식)
