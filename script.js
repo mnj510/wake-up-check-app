@@ -273,35 +273,37 @@ function showPage(pageName) {
     }
 }
 
-// 대시보드 업데이트
-function updateDashboard() {
-    updateStats();
-    updateRanking();
-}
+        // 대시보드 업데이트
+        function updateDashboard() {
+            updateStats();
+            updatePersonalCalendar();
+            updateMemberCalendarGrid();
+            updateRanking();
+        }
 
-// 통계 업데이트
-function updateStats() {
-    const statsGrid = document.getElementById('statsGrid');
-    const today = new Date();
-    const selectedYear = parseInt(document.getElementById('yearSelect').value);
-    const selectedMonth = parseInt(document.getElementById('monthSelect').value);
-    
-    let statsHTML = '';
-    
-    // 오늘 날짜 카드
-    statsHTML += `
-        <div class="stat-card">
-            <div class="stat-content">
-                <div class="stat-icon blue">
-                    <i data-lucide="calendar"></i>
+        // 통계 업데이트
+        function updateStats() {
+            const statsGrid = document.getElementById('statsGrid');
+            const today = new Date();
+            const selectedYear = parseInt(document.getElementById('yearSelect').value);
+            const selectedMonth = parseInt(document.getElementById('monthSelect').value);
+            
+            let statsHTML = '';
+            
+            // 오늘 날짜 카드 (월/일 형태로 변경)
+            statsHTML += `
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-icon blue">
+                            <i data-lucide="calendar"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>오늘</h3>
+                            <p>${today.getMonth() + 1} / ${today.getDate()}</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="stat-info">
-                    <h3>오늘</h3>
-                    <p>${today.getDate()} / ${today.getMonth() + 1}</p>
-                </div>
-            </div>
-        </div>
-    `;
+            `;
     
     if (currentUser.isAdmin) {
         // 관리자용 통계
@@ -475,37 +477,155 @@ function calculateScore(memberId, month, year) {
     return score;
 }
 
-// 순위 업데이트
-function updateRanking() {
-    const rankingList = document.getElementById('rankingList');
-    const selectedYear = parseInt(document.getElementById('yearSelect').value);
-    const selectedMonth = parseInt(document.getElementById('monthSelect').value);
-    
-    // 멤버별 점수 계산 및 정렬
-    const memberScores = members
-        .filter(m => !m.isAdmin)
-        .map(member => ({
-            ...member,
-            score: calculateScore(member.id, selectedMonth, selectedYear)
-        }))
-        .sort((a, b) => b.score - a.score);
-    
-    let rankingHTML = '';
-    memberScores.forEach((member, index) => {
-        const isCurrentUser = currentUser && member.id === currentUser.id;
-        rankingHTML += `
-            <div class="ranking-item ${isCurrentUser ? 'current-user' : ''}">
-                <div class="ranking-left">
-                    <span class="rank-number">${index + 1}</span>
-                    <span class="member-name">${member.name}</span>
-                </div>
-                <div class="score">${member.score}점</div>
-            </div>
-        `;
-    });
-    
-    rankingList.innerHTML = rankingHTML;
-}
+        // 개인 달력 업데이트
+        function updatePersonalCalendar() {
+            if (!currentUser || currentUser.isAdmin) return;
+            
+            const personalCalendar = document.getElementById('personalCalendar');
+            const selectedYear = parseInt(document.getElementById('yearSelect').value);
+            const selectedMonth = parseInt(document.getElementById('monthSelect').value);
+            
+            let calendarHTML = '<div class="calendar-header">';
+            
+            // 요일 헤더
+            calendarHTML += '<div class="member-name">날짜</div>';
+            for (let day = 1; day <= 31; day++) {
+                const date = new Date(selectedYear, selectedMonth - 1, day);
+                if (date.getMonth() + 1 !== selectedMonth) break;
+                calendarHTML += `<div class="date-header">${day}</div>`;
+            }
+            calendarHTML += '</div>';
+            
+            // 개인 기상 현황
+            calendarHTML += '<div class="calendar-row">';
+            calendarHTML += '<div class="member-name">기상</div>';
+            
+            for (let day = 1; day <= 31; day++) {
+                const date = new Date(selectedYear, selectedMonth - 1, day);
+                if (date.getMonth() + 1 !== selectedMonth) break;
+                
+                const dateStr = date.toDateString();
+                const dayData = checkData[currentUser.id]?.[dateStr];
+                const mustData = mustRecords[currentUser.id]?.[dateStr];
+                
+                let cellClass = '';
+                let cellContent = '';
+                
+                if (dayData?.wakeUp && dayData?.frog && mustData) {
+                    cellClass = 'success';
+                    cellContent = '✓';
+                } else if (dayData?.wakeUp || dayData?.frog || mustData) {
+                    cellClass = 'partial';
+                    cellContent = '○';
+                } else {
+                    cellClass = 'failure';
+                    cellContent = '✗';
+                }
+                
+                calendarHTML += `<div class="calendar-cell ${cellClass}">${cellContent}</div>`;
+            }
+            calendarHTML += '</div>';
+            
+            personalCalendar.innerHTML = calendarHTML;
+        }
+
+        // 멤버별 기상 현황 그리드 업데이트
+        function updateMemberCalendarGrid() {
+            if (!currentUser || !currentUser.isAdmin) return;
+            
+            const memberCalendarGrid = document.getElementById('memberCalendarGrid');
+            const selectedYear = parseInt(document.getElementById('yearSelect').value);
+            const selectedMonth = parseInt(document.getElementById('monthSelect').value);
+            
+            let gridHTML = '<div class="calendar-header">';
+            
+            // 멤버 이름 헤더
+            gridHTML += '<div class="member-name">멤버</div>';
+            for (let day = 1; day <= 31; day++) {
+                const date = new Date(selectedYear, selectedMonth - 1, day);
+                if (date.getMonth() + 1 !== selectedMonth) break;
+                gridHTML += `<div class="date-header">${day}</div>`;
+            }
+            gridHTML += '</div>';
+            
+            // 각 멤버별 기상 현황
+            const regularMembers = members.filter(m => !m.isAdmin);
+            regularMembers.forEach(member => {
+                gridHTML += '<div class="calendar-row">';
+                gridHTML += `<div class="member-name">${member.name}</div>`;
+                
+                for (let day = 1; day <= 31; day++) {
+                    const date = new Date(selectedYear, selectedMonth - 1, day);
+                    if (date.getMonth() + 1 !== selectedMonth) break;
+                    
+                    const dateStr = date.toDateString();
+                    const dayData = checkData[member.id]?.[dateStr];
+                    const mustData = mustRecords[member.id]?.[dateStr];
+                    
+                    let cellClass = '';
+                    let cellContent = '';
+                    
+                    if (dayData?.wakeUp && dayData?.frog && mustData) {
+                        cellClass = 'success';
+                        cellContent = '✓';
+                    } else if (dayData?.wakeUp || dayData?.frog || mustData) {
+                        cellClass = 'partial';
+                        cellContent = '○';
+                    } else {
+                        cellClass = 'failure';
+                        cellContent = '✗';
+                    }
+                    
+                    gridHTML += `<div class="calendar-cell ${cellClass}">${cellContent}</div>`;
+                }
+                gridHTML += '</div>';
+            });
+            
+            memberCalendarGrid.innerHTML = gridHTML;
+        }
+
+        // 순위 업데이트
+        function updateRanking() {
+            const rankingList = document.getElementById('rankingList');
+            const selectedYear = parseInt(document.getElementById('yearSelect').value);
+            const selectedMonth = parseInt(document.getElementById('monthSelect').value);
+            
+            // 멤버별 점수 계산 및 정렬
+            const memberScores = members
+                .filter(m => !m.isAdmin)
+                .map(member => ({
+                    ...member,
+                    score: calculateScore(member.id, selectedMonth, selectedYear)
+                }))
+                .sort((a, b) => b.score - a.score);
+            
+            // 동일 점수 처리
+            let currentRank = 1;
+            let currentScore = -1;
+            const rankedMembers = memberScores.map((member, index) => {
+                if (member.score !== currentScore) {
+                    currentRank = index + 1;
+                    currentScore = member.score;
+                }
+                return { ...member, rank: currentRank };
+            });
+            
+            let rankingHTML = '';
+            rankedMembers.forEach((member) => {
+                const isCurrentUser = currentUser && member.id === currentUser.id;
+                rankingHTML += `
+                    <div class="ranking-item ${isCurrentUser ? 'current-user' : ''}">
+                        <div class="ranking-left">
+                            <span class="rank-number">${member.rank}</span>
+                            <span class="member-name">${member.name}</span>
+                        </div>
+                        <div class="score">${member.score}점</div>
+                    </div>
+                `;
+            });
+            
+            rankingList.innerHTML = rankingHTML;
+        }
 
 // 기상 체크 처리
 function handleWakeUpCheck() {
