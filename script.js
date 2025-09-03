@@ -2342,8 +2342,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const completedMembers = [];
             const failedMembers = [];
 
-            // 모든 멤버의 오늘 기상 현황 확인
+            // 모든 멤버의 오늘 기상 현황 확인 (관리자 제외)
             members.forEach(member => {
+                // 관리자는 어떤 경우에도 제외
+                if (member.name === '관리자') return;
+                
                 const memberData = checkData[member.id]?.[today];
                 if (memberData?.wakeUp) {
                     completedMembers.push(member.name);
@@ -2365,6 +2368,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const noRecordMembers = [];
 
             members.forEach(member => {
+                // 관리자는 어떤 경우에도 제외
+                if (member.name === '관리자') return;
+                
                 const memberRecord = mustRecords[member.id]?.[yesterdayStr];
                 if (memberRecord && memberRecord.frog && memberRecord.frog.some(f => f)) {
                     frogRecords.push({
@@ -2654,14 +2660,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const currentMonth = now.getMonth() + 1;
             const currentYear = now.getFullYear();
             
-            // 모든 멤버의 점수 계산 (현재 달 기준)
-            const memberScores = members.map(member => {
-                const score = calculateScore(member.id, currentMonth, currentYear);
-                return {
-                    name: member.name,
-                    score: score
-                };
-            }).filter(member => member.score > 0); // 점수가 0보다 큰 멤버만
+            // 모든 멤버의 점수 계산 (현재 달 기준, 관리자 제외)
+            const memberScores = members
+                .filter(member => member.name !== '관리자') // 관리자 제외
+                .map(member => {
+                    const score = calculateScore(member.id, currentMonth, currentYear);
+                    return {
+                        name: member.name,
+                        score: score
+                    };
+                }).filter(member => member.score > 0); // 점수가 0보다 큰 멤버만
             
             // 점수별 내림차순 정렬
             memberScores.sort((a, b) => b.score - a.score);
