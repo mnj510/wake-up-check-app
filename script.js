@@ -637,7 +637,11 @@ function calculateScore(memberId, month, year) {
             // 해당 월의 실제 날짜 수 계산
             const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
             
-            let calendarHTML = `<div class="calendar-header" style="grid-template-columns: 80px repeat(${daysInMonth}, 1fr);">`;
+            // 고정 폭 칼럼 템플릿(셀 크기와 동일) 생성
+            const cellSize = 36; // styles.css --cell-size와 동일 값(px)
+            const columnsTemplate = `80px repeat(${daysInMonth}, ${cellSize}px)`;
+            
+            let calendarHTML = `<div class="calendar-header" style="grid-template-columns: ${columnsTemplate};">`;
             
             // 요일 헤더
             calendarHTML += '<div class="member-name">날짜</div>';
@@ -657,7 +661,7 @@ function calculateScore(memberId, month, year) {
             calendarHTML += '</div>';
             
             // 개인 기상 현황
-            calendarHTML += `<div class="calendar-row" style="grid-template-columns: 80px repeat(${daysInMonth}, 1fr);">`;
+            calendarHTML += `<div class="calendar-row" style="grid-template-columns: ${columnsTemplate};">`;
             calendarHTML += `<div class="member-name">${targetMemberName}</div>`;
             
             let successCount = 0;
@@ -894,11 +898,15 @@ function calculateScore(memberId, month, year) {
             // 해당 월의 실제 날짜 수 계산
             const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
             
+            // 고정 폭 칼럼 템플릿(셀 크기와 동일) 생성
+            const cellSize = 36; // styles.css --cell-size와 동일 값(px)
+            const columnsTemplate = `80px repeat(${daysInMonth}, ${cellSize}px)`;
+            
             // 전체 그리드 HTML 생성 (헤더와 멤버 행을 하나의 컨테이너에)
             let fullGridHTML = '';
             
             // 헤더 행 생성
-            fullGridHTML += `<div class="member-calendar-header" style="display: grid; grid-template-columns: 120px repeat(${daysInMonth}, 1fr); gap: 2px; margin-bottom: 1rem;">`;
+            fullGridHTML += `<div class="member-calendar-header" style="display: grid; grid-template-columns: ${columnsTemplate}; gap: 2px; margin-bottom: 1rem;">`;
             fullGridHTML += `<div class="member-name-header">멤버</div>`;
             
             for (let day = 1; day <= daysInMonth; day++) {
@@ -918,7 +926,7 @@ function calculateScore(memberId, month, year) {
             
             // 멤버별 기상 현황 행 생성
             members.forEach(member => {
-                fullGridHTML += `<div class="member-row" style="display: grid; grid-template-columns: 120px repeat(${daysInMonth}, 1fr); gap: 2px; margin-bottom: 0.5rem;">`;
+                fullGridHTML += `<div class="member-row" style="display: grid; grid-template-columns: ${columnsTemplate}; gap: 2px; margin-bottom: 0.5rem;">`;
                 fullGridHTML += `<div class="member-name">${member.name}</div>`;
                 
                 for (let day = 1; day <= daysInMonth; day++) {
