@@ -2334,7 +2334,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 텔레그램 봇 설정
         const TELEGRAM_BOT_TOKEN = '8428192472:AAFdpbUi1-cJQZO63-loQ8pXkQc-FS-WTb4';
-        const TELEGRAM_CHAT_ID = '-4827580561';
+        const TELEGRAM_CHAT_ID = '-482750561';
 
         // 기상 현황 자동 분류 및 텔레그램 전송
         function getWakeUpStatus() {
