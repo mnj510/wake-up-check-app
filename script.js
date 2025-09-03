@@ -144,53 +144,104 @@ function updateDateTitles() {
     }
 }
 
-// 로그인 처리
-function handleLogin() {
-    const id = document.getElementById('loginId').value;
-    const password = document.getElementById('loginPassword').value;
-    
-    if (id === 'mnj510' && password === 'asdf6014!!') {
-        currentUser = members.find(m => m.id === 'mnj510');
-    } else {
-        const member = members.find(m => m.code === id);
-        if (member) {
-            currentUser = member;
-        } else {
-            alert('올바른 멤버 코드를 입력해주세요.');
-            return;
+        // 로그인 타입 선택
+        function selectLoginType(type) {
+            const memberForm = document.getElementById('memberLoginForm');
+            const adminForm = document.getElementById('adminLoginForm');
+            const memberBtn = document.querySelector('.login-type-btn:first-child');
+            const adminBtn = document.querySelector('.login-type-btn:last-child');
+            
+            // 모든 버튼 비활성화
+            memberBtn.classList.remove('active');
+            adminBtn.classList.remove('active');
+            
+            // 모든 폼 숨기기
+            memberForm.classList.add('hidden');
+            adminForm.classList.add('hidden');
+            
+            if (type === 'member') {
+                memberBtn.classList.add('active');
+                memberForm.classList.remove('hidden');
+            } else if (type === 'admin') {
+                adminBtn.classList.add('active');
+                adminForm.classList.remove('hidden');
+            }
         }
-    }
-    
-    // 로그인 성공
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('appScreen').style.display = 'block';
-    document.getElementById('userInfo').textContent = `${currentUser.name}님 환영합니다`;
-    
-    // 관리자 탭 표시
-    if (currentUser.isAdmin) {
-        document.getElementById('adminTab').classList.remove('hidden');
-    }
-    
-    // 대시보드 초기화
-    updateDashboard();
-    
-    // MUST 페이지 초기화
-    updateMustPage();
-}
 
-// 로그아웃
-function handleLogout() {
-    currentUser = null;
-    currentPage = 'dashboard';
-    
-    document.getElementById('appScreen').style.display = 'none';
-    document.getElementById('loginScreen').style.display = 'block';
-    document.getElementById('adminTab').classList.add('hidden');
-    
-    // 폼 초기화
-    document.getElementById('loginId').value = '';
-    document.getElementById('loginPassword').value = '';
-}
+        // 멤버 로그인 처리
+        function handleMemberLogin() {
+            const memberCode = document.getElementById('memberCode').value.trim();
+            
+            if (!memberCode) {
+                alert('멤버 코드를 입력해주세요.');
+                return;
+            }
+            
+            const member = members.find(m => m.code === memberCode);
+            if (member) {
+                currentUser = member;
+                loginSuccess();
+            } else {
+                alert('올바른 멤버 코드를 입력해주세요.');
+                return;
+            }
+        }
+
+        // 관리자 로그인 처리
+        function handleAdminLogin() {
+            const adminId = document.getElementById('adminId').value.trim();
+            const adminPassword = document.getElementById('adminPassword').value;
+            
+            if (!adminId || !adminPassword) {
+                alert('관리자 ID와 비밀번호를 모두 입력해주세요.');
+                return;
+            }
+            
+            if (adminId === 'mnj510' && adminPassword === 'asdf6014!!') {
+                currentUser = members.find(m => m.id === 'mnj510');
+                loginSuccess();
+            } else {
+                alert('올바른 관리자 정보를 입력해주세요.');
+                return;
+            }
+        }
+
+        // 로그인 성공 공통 처리
+        function loginSuccess() {
+            // 로그인 성공
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('appScreen').style.display = 'block';
+            document.getElementById('userInfo').textContent = `${currentUser.name}님 환영합니다`;
+            
+            // 관리자 탭 표시
+            if (currentUser.isAdmin) {
+                document.getElementById('adminTab').classList.remove('hidden');
+            }
+            
+            // 대시보드 초기화
+            updateDashboard();
+            
+            // MUST 페이지 초기화
+            updateMustPage();
+        }
+
+        // 로그아웃
+        function handleLogout() {
+            currentUser = null;
+            currentPage = 'dashboard';
+            
+            document.getElementById('appScreen').style.display = 'none';
+            document.getElementById('loginScreen').style.display = 'block';
+            document.getElementById('adminTab').classList.add('hidden');
+            
+            // 폼 초기화
+            document.getElementById('memberCode').value = '';
+            document.getElementById('adminId').value = '';
+            document.getElementById('adminPassword').value = '';
+            
+            // 멤버 로그인 폼으로 초기화
+            selectLoginType('member');
+        }
 
 // 페이지 전환
 function showPage(pageName) {

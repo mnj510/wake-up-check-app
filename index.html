@@ -16,15 +16,36 @@
             </div>
             <h1>기상 체크 앱</h1>
             
-            <div class="input-group">
-                <input type="text" id="loginId" placeholder="관리자 ID 또는 멤버 코드" onkeypress="if(event.key==='Enter') handleLogin()">
+            <!-- 로그인 타입 선택 -->
+            <div class="login-type-selector">
+                <button class="login-type-btn active" onclick="selectLoginType('member')">
+                    <i data-lucide="users"></i>
+                    <span>멤버 로그인</span>
+                </button>
+                <button class="login-type-btn" onclick="selectLoginType('admin')">
+                    <i data-lucide="shield"></i>
+                    <span>관리자 로그인</span>
+                </button>
             </div>
             
-            <div class="input-group">
-                <input type="password" id="loginPassword" placeholder="비밀번호 (관리자만)" onkeypress="if(event.key==='Enter') handleLogin()">
+            <!-- 멤버 로그인 폼 -->
+            <div id="memberLoginForm" class="login-form">
+                <div class="input-group">
+                    <input type="text" id="memberCode" placeholder="멤버 코드를 입력하세요" onkeypress="if(event.key==='Enter') handleMemberLogin()">
+                </div>
+                <button class="btn btn-primary" onclick="handleMemberLogin()">멤버 로그인</button>
             </div>
             
-            <button class="btn btn-primary" onclick="handleLogin()">로그인</button>
+            <!-- 관리자 로그인 폼 -->
+            <div id="adminLoginForm" class="login-form hidden">
+                <div class="input-group">
+                    <input type="text" id="adminId" placeholder="관리자 ID" onkeypress="if(event.key==='Enter') handleAdminLogin()">
+                </div>
+                <div class="input-group">
+                    <input type="password" id="adminPassword" placeholder="비밀번호" onkeypress="if(event.key==='Enter') handleAdminLogin()">
+                </div>
+                <button class="btn btn-primary" onclick="handleAdminLogin()">관리자 로그인</button>
+            </div>
         </div>
     </div>
 
