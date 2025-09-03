@@ -1536,15 +1536,23 @@ async function handleFrogCheck() {
         // 본인 기록: 복사
         function copyLoadedRecord() {
             const datePicker = document.getElementById('recordDatePicker');
-            const dateStr = new Date(datePicker.value).toDateString();
+            const selected = new Date(datePicker.value);
+            const dateStr = selected.toDateString();
             const record = mustRecords[currentUser.id]?.[dateStr];
             if (!record) { alert('해당 날짜에 기록이 없습니다.'); return; }
             let content = '';
-            const today = new Date(dateStr);
-            const yymmdd = today.getFullYear().toString().slice(-2) + String(today.getMonth()+1).padStart(2,'0') + String(today.getDate()).padStart(2,'0');
+            
+            // 선택한 날짜 YYMMDD
+            const yymmdd = selected.getFullYear().toString().slice(-2) + String(selected.getMonth()+1).padStart(2,'0') + String(selected.getDate()).padStart(2,'0');
+            // 다음 날 YYMMDD (MUST는 다음 날 계획)
+            const next = new Date(selected);
+            next.setDate(next.getDate() + 1);
+            const nextYYMMDD = next.getFullYear().toString().slice(-2) + String(next.getMonth()+1).padStart(2,'0') + String(next.getDate()).padStart(2,'0');
+            
             content += `${yymmdd} ${currentUser.name}\n\n`;
+            
             if (record.must?.some(m=>m)) {
-                content += '[📋 우선순위 MUST 5가지]\n';
+                content += `[📋 ${nextYYMMDD} 우선순위 MUST 5가지]\n`;
                 record.must.forEach((m,i)=>{ if(m) content += `${i+1}. ${m}\n`; });
                 content += '\n';
             }
@@ -1554,7 +1562,7 @@ async function handleFrogCheck() {
                 content += '\n';
             }
             if (record.dailyReview) {
-                content += '[📝 하루 복기]\n';
+                content += `[📝 ${yymmdd} 하루 복기]\n`;
                 content += record.dailyReview;
             }
             navigator.clipboard.writeText(content).then(()=>alert('복사되었습니다!'));
