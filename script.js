@@ -1318,6 +1318,11 @@ async function handleFrogCheck() {
                 // 폼 초기화
                 clearMustForm();
                 
+                // 저장 완료 후 MUST 기록 탭으로 자동 전환하여 오늘 저장된 기록 표시
+                setTimeout(() => {
+                    switchMustTab('record');
+                }, 500);
+                
             } catch (error) {
                 console.error('MUST 기록 저장 오류:', error);
                 
