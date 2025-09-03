@@ -616,28 +616,39 @@ function calculateScore(memberId, month, year) {
 
         // 멤버별 기상 현황 그리드 업데이트
         function updateMemberCalendarGrid() {
-            if (!currentUser || !currentUser.isAdmin) return;
-            
+            const memberCalendarHeader = document.getElementById('memberCalendarHeader');
             const memberCalendarGrid = document.getElementById('memberCalendarGrid');
             const selectedYear = parseInt(document.getElementById('yearSelect').value);
             const selectedMonth = parseInt(document.getElementById('monthSelect').value);
             
-            let gridHTML = '<div class="calendar-header">';
+            if (!memberCalendarHeader || !memberCalendarGrid) return;
             
-            // 멤버 이름 헤더
-            gridHTML += '<div class="member-name">멤버</div>';
+            // 날짜와 요일 헤더 생성
+            let headerHTML = '<div class="member-name-header">멤버</div>';
+            
             for (let day = 1; day <= 31; day++) {
                 const date = new Date(selectedYear, selectedMonth - 1, day);
                 if (date.getMonth() + 1 !== selectedMonth) break;
-                gridHTML += `<div class="date-header">${day}</div>`;
+                
+                const dayOfWeek = date.getDay();
+                const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+                const dayName = dayNames[dayOfWeek];
+                
+                headerHTML += `
+                    <div class="date-header">
+                        <div class="date-number">${day}</div>
+                        <div class="day-name">${dayName}</div>
+                    </div>
+                `;
             }
-            gridHTML += '</div>';
             
-            // 각 멤버별 기상 현황
-            const regularMembers = members.filter(m => !m.isAdmin);
-            regularMembers.forEach(member => {
-                gridHTML += '<div class="calendar-row">';
-                gridHTML += `<div class="member-name">${member.name}</div>`;
+            memberCalendarHeader.innerHTML = headerHTML;
+            
+            // 멤버별 기상 현황 그리드 생성
+            let gridHTML = '';
+            
+            members.forEach(member => {
+                let memberRow = `<div class="member-name">${member.name}</div>`;
                 
                 for (let day = 1; day <= 31; day++) {
                     const date = new Date(selectedYear, selectedMonth - 1, day);
@@ -650,26 +661,29 @@ function calculateScore(memberId, month, year) {
                     let cellClass = '';
                     let cellContent = '';
                     
-                    // 미래 날짜는 빈칸으로 표시
                     if (date > today) {
                         cellClass = 'future';
                         cellContent = '';
                     } else if (dayData?.wakeUp) {
-                        // 기상 성공 (파란색)
                         cellClass = 'success';
                         cellContent = '';
                     } else {
-                        // 기상 실패 (빨간색)
                         cellClass = 'failure';
                         cellContent = '';
                     }
                     
-                    gridHTML += `<div class="calendar-cell ${cellClass}">${cellContent}</div>`;
+                    memberRow += `<div class="calendar-cell ${cellClass}">${cellContent}</div>`;
                 }
-                gridHTML += '</div>';
+                
+                gridHTML += `<div class="member-row">${memberRow}</div>`;
             });
             
             memberCalendarGrid.innerHTML = gridHTML;
+            
+            // lucide 아이콘 안전하게 생성
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
         }
 
         // 순위 업데이트

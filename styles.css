@@ -1193,6 +1193,15 @@ h1 {
             overflow-x: auto;
         }
 
+        /* 멤버별 기상 현황 컨테이너 */
+        .member-calendar-container {
+            overflow-x: auto;
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid #e9ecef;
+        }
+
         .calendar-header {
             display: grid;
             grid-template-columns: 80px repeat(31, 1fr);
@@ -1221,6 +1230,42 @@ h1 {
             min-width: 30px;
         }
 
+        /* 멤버별 기상 현황 헤더 */
+        .member-name-header {
+            background: #e3f2fd;
+            padding: 0.75rem;
+            border-radius: 8px;
+            text-align: center;
+            color: #1976d2;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .date-header {
+            background: #f5f5f5;
+            padding: 0.5rem;
+            border-radius: 6px;
+            text-align: center;
+            color: #666;
+            font-size: 0.8rem;
+            min-width: 35px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .date-number {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .day-name {
+            font-size: 0.7rem;
+            color: #999;
+        }
+
         .calendar-row {
             display: grid;
             grid-template-columns: 80px repeat(31, 1fr);
@@ -1236,6 +1281,28 @@ h1 {
             color: #1a1a1a;
             font-weight: 500;
             border: 1px solid #e9ecef;
+        }
+
+        /* 멤버별 기상 현황 행 */
+        .member-row {
+            display: grid;
+            grid-template-columns: 120px repeat(31, 1fr);
+            gap: 2px;
+            margin-bottom: 0.5rem;
+        }
+
+        .member-row .member-name {
+            background: #ffffff;
+            padding: 0.75rem;
+            border-radius: 8px;
+            text-align: center;
+            color: #1a1a1a;
+            font-weight: 500;
+            border: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 40px;
         }
 
         .calendar-cell {
