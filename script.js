@@ -26,7 +26,18 @@ let mustRecords = {};
 
         // 초기화
         document.addEventListener('DOMContentLoaded', function() {
-            lucide.createIcons();
+            // lucide 라이브러리가 로드될 때까지 대기
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            } else {
+                // lucide가 로드되지 않은 경우 재시도
+                setTimeout(() => {
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
+                }, 1000);
+            }
+            
             updateClock();
             
             // 시계를 100ms마다 업데이트하여 부드러운 카운터 효과
@@ -265,8 +276,10 @@ function updateDateTitles() {
                 document.getElementById('adminTab').classList.remove('hidden');
             }
             
-            // 대시보드 초기화
-            updateDashboard();
+            // 대시보드 초기화 (약간의 지연 후)
+            setTimeout(() => {
+                updateDashboard();
+            }, 100);
             
             // MUST 페이지 초기화
             updateMustPage();
@@ -308,16 +321,18 @@ function showPage(pageName) {
     
     currentPage = pageName;
     
-    // 페이지별 초기화
-    if (pageName === 'dashboard') {
-        updateDashboard();
-    } else if (pageName === 'check') {
-        updateWakeUpButton();
-    } else if (pageName === 'must') {
-        updateMustPage();
-    } else if (pageName === 'admin') {
-        updateAdminPage();
-    }
+                // 페이지별 초기화
+            if (pageName === 'dashboard') {
+                setTimeout(() => {
+                    updateDashboard();
+                }, 100);
+            } else if (pageName === 'check') {
+                updateWakeUpButton();
+            } else if (pageName === 'must') {
+                updateMustPage();
+            } else if (pageName === 'admin') {
+                updateAdminPage();
+            }
 }
 
         // 대시보드 업데이트
@@ -436,8 +451,11 @@ function showPage(pageName) {
                 `;
             }
     
-    statsGrid.innerHTML = statsHTML;
-    lucide.createIcons();
+                statsGrid.innerHTML = statsHTML;
+            // lucide 아이콘 안전하게 생성
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
 }
 
         // 개별 멤버 통계 계산
@@ -839,8 +857,11 @@ function updateAdminPage() {
         `;
     });
     
-    memberList.innerHTML = memberHTML;
-    lucide.createIcons();
+                memberList.innerHTML = memberHTML;
+            // lucide 아이콘 안전하게 생성
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
 }
 
 // 멤버 추가
