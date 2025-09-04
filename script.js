@@ -2375,17 +2375,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // MUST 시간별 안내 메시지 및 저장 버튼 상태 업데이트
         function updateMustTimeGuide() {
+            console.log('🔥 updateMustTimeGuide 함수 실행됨 - 버전 1.0.1');
+            
             const saveBtn = document.getElementById('saveMustBtn');
             const timeMessage = document.getElementById('mustTimeMessage');
             
-            if (!saveBtn || !timeMessage) return;
+            if (!saveBtn || !timeMessage) {
+                console.log('❌ saveBtn 또는 timeMessage를 찾을 수 없음');
+                return;
+            }
             
             const now = new Date();
             const currentHour = now.getHours();
             const isScoringTime = isWithinMustScoringWindow(now);
             
+            console.log(`⏰ 현재 시간: ${currentHour}:${now.getMinutes()}, 점수 획득 시간: ${isScoringTime}`);
+            
             // 저장 버튼은 항상 활성화 (시간에 관계없이)
             saveBtn.disabled = false;
+            console.log('✅ 저장 버튼 활성화됨 (disabled = false)');
             
             // 시간별 안내 메시지 업데이트
             if (isScoringTime) {
@@ -2591,6 +2599,11 @@ document.addEventListener('DOMContentLoaded', function() {
         function scheduleDailyReport() {
             console.log('📅 텔레그램 자동 전송 스케줄링 시작...');
             
+            // 하루에 한 번만 전송되도록 하는 플래그들
+            let wakeUpSentToday = false;
+            let frogSentToday = false;
+            let scoreSentToday = false;
+            
             const now = new Date();
             console.log('현재 시간:', now.toLocaleString());
             
@@ -2633,26 +2646,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 const currentTime = new Date();
                 const currentHour = currentTime.getHours();
                 const currentMinute = currentTime.getMinutes();
+                const today = currentTime.toDateString();
                 
-                // 05:01에 기상 현황 전송
-                if (currentHour === 5 && currentMinute === 1) {
+                // 05:01에 기상 현황 전송 (하루에 한 번만)
+                if (currentHour === 5 && currentMinute === 1 && !wakeUpSentToday) {
                     console.log('🚀 05:01 기상 현황 전송 시작!');
                     const wakeUpMessage = formatWakeUpMessage();
                     sendTelegramMessage(wakeUpMessage);
+                    wakeUpSentToday = true;
+                    console.log('✅ 기상 현황 전송 완료 - 오늘은 더 이상 전송하지 않음');
                 }
                 
-                // 05:02에 개구리 기록 전송
-                if (currentHour === 5 && currentMinute === 2) {
+                // 05:02에 개구리 기록 전송 (하루에 한 번만)
+                if (currentHour === 5 && currentMinute === 2 && !frogSentToday) {
                     console.log('🚀 05:02 개구리 기록 전송 시작!');
                     const frogMessage = formatFrogMessage();
                     sendTelegramMessage(frogMessage);
+                    frogSentToday = true;
+                    console.log('✅ 개구리 기록 전송 완료 - 오늘은 더 이상 전송하지 않음');
                 }
                 
-                // 05:03에 멤버 점수 현황 전송
-                if (currentHour === 5 && currentMinute === 3) {
+                // 05:03에 멤버 점수 현황 전송 (하루에 한 번만)
+                if (currentHour === 5 && currentMinute === 3 && !scoreSentToday) {
                     console.log('🚀 05:03 멤버 점수 현황 전송 시작!');
                     const scoreMessage = formatScoreMessage();
                     sendTelegramMessage(scoreMessage);
+                    scoreSentToday = true;
+                    console.log('✅ 멤버 점수 현황 전송 완료 - 오늘은 더 이상 전송하지 않음');
+                }
+                
+                // 자정이 되면 플래그 초기화 (새로운 하루 시작)
+                if (currentHour === 0 && currentMinute === 0) {
+                    wakeUpSentToday = false;
+                    frogSentToday = false;
+                    scoreSentToday = false;
+                    console.log('🔄 새로운 하루 시작 - 전송 플래그 초기화됨');
                 }
             };
             
