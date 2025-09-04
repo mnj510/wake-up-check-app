@@ -612,7 +612,11 @@ function calculateScore(memberId, month, year) {
             if (dateObj > today) return;
             const record = memberMustData[date];
             if (record && typeof record === 'object') {
-                if (record.timestamp) {
+                // 새로운 데이터 구조: points_earned 필드 확인
+                if (record.points_earned !== undefined) {
+                    score += record.points_earned;
+                } else if (record.timestamp) {
+                    // 기존 데이터 구조: 타임스탬프로 시간 확인
                     const ts = new Date(record.timestamp);
                     if (isWithinMustScoringWindow(ts)) {
                         score += 1;
@@ -1316,9 +1320,34 @@ async function handleFrogCheck() {
                 return;
             }
             
-            const today = new Date().toDateString();
             const now = new Date();
-            const isScoringTime = isWithinMustScoringWindow(now);
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            
+            // 20:00 ~ 23:59 사이인지 확인
+            const isScoringTime = (currentHour >= 20 && currentHour <= 23) && 
+                                 (currentHour === 20 ? currentMinute >= 0 : true) && 
+                                 (currentHour === 23 ? currentMinute <= 59 : true);
+            
+            let targetDate;
+            let pointsEarned = 0;
+            let dateType = '';
+            
+            if (isScoringTime) {
+                // 점수 획득 시간: 오늘 날짜로 저장
+                targetDate = now.toDateString();
+                pointsEarned = 1;
+                dateType = '오늘';
+                console.log('점수 획득 시간 (20:00-23:59) - 오늘 날짜로 저장');
+            } else {
+                // 점수 획득 불가 시간: 어제 날짜로 저장
+                const yesterday = new Date(now);
+                yesterday.setDate(yesterday.getDate() - 1);
+                targetDate = yesterday.toDateString();
+                pointsEarned = 0;
+                dateType = '어제';
+                console.log('점수 획득 불가 시간 - 어제 날짜로 저장');
+            }
             
             try {
                 console.log('MUST 기록 저장 시작...');
@@ -1329,7 +1358,10 @@ async function handleFrogCheck() {
                     must: [must1, must2, must3, must4, must5],
                     frog: [frog1, frog2, frog3],
                     dailyReview: dailyReview,
-                    timestamp: now.toISOString()
+                    timestamp: now.toISOString(),
+                    points_earned: pointsEarned,
+                    saved_date: targetDate,
+                    date_type: dateType
                 };
                 
                 console.log('저장할 데이터:', recordData);
@@ -1339,7 +1371,7 @@ async function handleFrogCheck() {
                     .from('must_records')
                     .upsert([{
                         member_id: currentUser.id,
-                        date: today,
+                        date: targetDate,
                         content: recordData
                     }], {
                         onConflict: 'member_id,date'
@@ -1357,12 +1389,24 @@ async function handleFrogCheck() {
                     mustRecords[currentUser.id] = {};
                 }
                 
-                mustRecords[currentUser.id][today] = recordData;
+                mustRecords[currentUser.id][targetDate] = recordData;
                 
-                if (isScoringTime) {
-                    alert('MUST 기록이 저장되었습니다! (20:00~23:59 작성 → 1점)');
+                // 점수 업데이트 (로컬)
+                if (pointsEarned > 0) {
+                    if (!checkData[currentUser.id]) {
+                        checkData[currentUser.id] = {};
+                    }
+                    if (!checkData[currentUser.id][targetDate]) {
+                        checkData[currentUser.id][targetDate] = {};
+                    }
+                    checkData[currentUser.id][targetDate].must = true;
+                }
+                
+                // 성공 메시지
+                if (pointsEarned > 0) {
+                    alert(`MUST/개구리 기록이 ${dateType} 날짜로 저장되었습니다! 1점을 획득했습니다. (${targetDate})`);
                 } else {
-                    alert('MUST 기록이 저장되었습니다! (점수는 20:00~23:59 작성 시에만 부여됩니다)');
+                    alert(`MUST/개구리 기록이 ${dateType} 날짜로 저장되었습니다. 점수는 획득하지 못했습니다. (${targetDate})`);
                 }
                 
                 // 폼 초기화
@@ -1387,13 +1431,35 @@ async function handleFrogCheck() {
                 if (!mustRecords[currentUser.id]) {
                     mustRecords[currentUser.id] = {};
                 }
-                mustRecords[currentUser.id][today] = {
+                mustRecords[currentUser.id][targetDate] = {
                     type: 'creation',
                     must: [must1, must2, must3, must4, must5],
                     frog: [frog1, frog2, frog3],
                     dailyReview: dailyReview,
-                    timestamp: now.toISOString()
+                    timestamp: now.toISOString(),
+                    points_earned: pointsEarned,
+                    saved_date: targetDate,
+                    date_type: dateType
                 };
+
+                // 점수 업데이트 (로컬)
+                if (pointsEarned > 0) {
+                    if (!checkData[currentUser.id]) {
+                        checkData[currentUser.id] = {};
+                    }
+                    if (!checkData[currentUser.id][targetDate]) {
+                        checkData[currentUser.id][targetDate] = {};
+                    }
+                    checkData[currentUser.id][targetDate].must = true;
+                }
+
+                if (pointsEarned > 0) {
+                    alert(`MUST/개구리 기록이 로컬에 ${dateType} 날짜로 저장되었습니다! 1점을 획득했습니다. (${targetDate})`);
+                } else {
+                    alert(`MUST/개구리 기록이 로컬에 ${dateType} 날짜로 저장되었습니다. 점수는 획득하지 못했습니다. (${targetDate})`);
+                }
+
+                clearMustForm();
             }
         }
 
