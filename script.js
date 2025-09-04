@@ -1333,12 +1333,16 @@ async function handleFrogCheck() {
             let pointsEarned = 0;
             let dateType = '';
             
+            console.log(`현재 시간: ${currentHour}:${currentMinute.toString().padStart(2, '0')}`);
+            console.log(`점수 획득 시간 여부: ${isScoringTime}`);
+            
             if (isScoringTime) {
                 // 점수 획득 시간: 오늘 날짜로 저장
                 targetDate = now.toDateString();
                 pointsEarned = 1;
                 dateType = '오늘';
                 console.log('점수 획득 시간 (20:00-23:59) - 오늘 날짜로 저장');
+                console.log('저장될 날짜:', targetDate);
             } else {
                 // 점수 획득 불가 시간: 어제 날짜로 저장
                 const yesterday = new Date(now);
@@ -1347,6 +1351,7 @@ async function handleFrogCheck() {
                 pointsEarned = 0;
                 dateType = '어제';
                 console.log('점수 획득 불가 시간 - 어제 날짜로 저장');
+                console.log('저장될 날짜:', targetDate);
             }
             
             try {
@@ -1412,6 +1417,11 @@ async function handleFrogCheck() {
                 // 폼 초기화
                 clearMustForm();
                 
+                // 대시보드 업데이트 (점수가 변경되었을 경우)
+                if (pointsEarned > 0) {
+                    updateDashboard();
+                }
+                
             } catch (error) {
                 console.error('MUST 기록 저장 오류:', error);
                 
@@ -1455,6 +1465,8 @@ async function handleFrogCheck() {
 
                 if (pointsEarned > 0) {
                     alert(`MUST/개구리 기록이 로컬에 ${dateType} 날짜로 저장되었습니다! 1점을 획득했습니다. (${targetDate})`);
+                    // 대시보드 업데이트
+                    updateDashboard();
                 } else {
                     alert(`MUST/개구리 기록이 로컬에 ${dateType} 날짜로 저장되었습니다. 점수는 획득하지 못했습니다. (${targetDate})`);
                 }
