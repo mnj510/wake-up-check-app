@@ -2384,8 +2384,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const currentHour = now.getHours();
             const isScoringTime = isWithinMustScoringWindow(now);
             
-            // 저장 버튼 활성화/비활성화
-            saveBtn.disabled = !isScoringTime;
+            // 저장 버튼은 항상 활성화 (시간에 관계없이)
+            saveBtn.disabled = false;
             
             // 시간별 안내 메시지 업데이트
             if (isScoringTime) {
@@ -2399,12 +2399,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (currentHour < 20) {
                     timeMessage.innerHTML = `
                         ⏰ <span class="time-highlight">${20 - currentHour}시간 ${59 - now.getMinutes()}분 후</span> 점수 획득 가능!<br>
-                        MUST 기록 저장은 <strong>20:00 ~ 23:59</strong> 사이에만 1점을 획득할 수 있습니다.
+                        MUST 기록 저장은 <strong>20:00 ~ 23:59</strong> 사이에만 1점을 획득할 수 있습니다.<br>
+                        <span style="color: #666; font-size: 0.9em;">💡 지금 저장하면 어제 날짜로 기록됩니다.</span>
                     `;
-            } else {
+                } else {
                     timeMessage.innerHTML = `
                         🌙 오늘 점수 획득 시간이 <span class="time-highlight">종료</span>되었습니다.<br>
-                        MUST 기록 저장은 <strong>20:00 ~ 23:59</strong> 사이에만 1점을 획득할 수 있습니다.
+                        MUST 기록 저장은 <strong>20:00 ~ 23:59</strong> 사이에만 1점을 획득할 수 있습니다.<br>
+                        <span style="color: #666; font-size: 0.9em;">💡 지금 저장하면 어제 날짜로 기록됩니다.</span>
                     `;
                 }
             }
