@@ -2569,52 +2569,56 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('요청 본문:', requestBody);
                 console.log('API URL:', `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`);
                 
-                // 네트워크 타임아웃 설정 (10초)
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000);
+                // JSONP 방식으로 CORS 우회
+                const telegramUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+                const params = new URLSearchParams();
+                params.append('chat_id', TELEGRAM_CHAT_ID);
+                params.append('text', message);
                 
-                // CORS 프록시를 사용하여 텔레그램 API 호출
-                const proxyUrl = 'https://api.allorigins.win/raw?url=';
-                const telegramUrl = encodeURIComponent(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`);
+                // JSONP 요청을 위한 스크립트 태그 생성
+                const script = document.createElement('script');
+                const callbackName = 'telegramCallback_' + Date.now();
                 
-                const response = await fetch(proxyUrl + telegramUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(requestBody),
-                    signal: controller.signal
-                });
-
-                clearTimeout(timeoutId);
-                console.log('응답 상태:', response.status, response.statusText);
+                // 전역 콜백 함수 등록
+                window[callbackName] = function(response) {
+                    console.log('텔레그램 API 응답:', response);
+                    
+                    if (response.ok) {
+                        console.log('✅ 텔레그램 메시지 전송 성공:', response);
+                        alert('텔레그램 전송 성공!');
+                    } else {
+                        console.error('❌ 텔레그램 메시지 전송 실패:', response);
+                        alert(`텔레그램 전송 실패: ${response.description || '알 수 없는 오류'}`);
+                    }
+                    
+                    // 정리
+                    document.head.removeChild(script);
+                    delete window[callbackName];
+                };
                 
-                // 응답이 성공적인지 확인
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
+                // JSONP 요청 URL 생성
+                const jsonpUrl = `${telegramUrl}?${params.toString()}&callback=${callbackName}`;
+                console.log('JSONP URL:', jsonpUrl);
                 
-                const result = await response.json();
-                console.log('API 응답:', result);
+                script.src = jsonpUrl;
+                script.onerror = function() {
+                    console.error('❌ JSONP 요청 실패');
+                    alert('텔레그램 전송 실패 - 네트워크 오류');
+                    
+                    // 정리
+                    document.head.removeChild(script);
+                    delete window[callbackName];
+                };
                 
-                if (result.ok) {
-                    console.log('✅ 텔레그램 메시지 전송 성공:', result);
-                    alert('텔레그램 전송 성공!');
-                } else {
-                    console.error('❌ 텔레그램 메시지 전송 실패:', result);
-                    alert(`텔레그램 전송 실패: ${result.description || '알 수 없는 오류'}`);
-                }
+                document.head.appendChild(script);
+                
             } catch (error) {
                 console.error('❌ 텔레그램 전송 오류:', error);
                 
                 let errorMessage = '텔레그램 전송 중 오류가 발생했습니다.';
                 
-                if (error.name === 'AbortError') {
-                    errorMessage = '텔레그램 전송 시간 초과 (10초) - 네트워크 연결을 확인해주세요.';
-                } else if (error.message.includes('Failed to fetch')) {
+                if (error.message.includes('Failed to fetch')) {
                     errorMessage = '네트워크 연결 오류 - 인터넷 연결을 확인해주세요.';
-                } else if (error.message.includes('HTTP')) {
-                    errorMessage = `서버 오류: ${error.message}`;
                 } else {
                     errorMessage = `오류: ${error.message}`;
                 }
