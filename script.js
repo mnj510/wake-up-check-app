@@ -2573,7 +2573,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000);
                 
-                const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                // CORS 프록시를 사용하여 텔레그램 API 호출
+                const proxyUrl = 'https://api.allorigins.win/raw?url=';
+                const telegramUrl = encodeURIComponent(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`);
+                
+                const response = await fetch(proxyUrl + telegramUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
