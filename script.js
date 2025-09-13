@@ -2555,91 +2555,90 @@ document.addEventListener('DOMContentLoaded', function() {
             return wakeUpMessage + '\n=======\n\n' + frogMessage;
         }
 
-        // 텔레그램 메시지 전송
+        // 텔레그램 메시지 전송 (대안 방식)
         async function sendTelegramMessage(message) {
             try {
                 console.log('텔레그램 전송 시작...');
                 
-                const requestBody = {
-                    chat_id: TELEGRAM_CHAT_ID,
-                    text: message
-                    // parse_mode 제거 (HTML 태그 파싱 오류 방지)
-                };
+                // 클립보드에 메시지 복사
+                await navigator.clipboard.writeText(message);
                 
-                console.log('요청 본문:', requestBody);
-                console.log('API URL:', `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`);
+                // 텔레그램 웹 버전으로 직접 전송하는 링크 생성
+                const telegramWebUrl = `https://web.telegram.org/k/#@checkgetup_bot`;
+                const encodedMessage = encodeURIComponent(message);
                 
-                // 다양한 CORS 프록시 시도
-                const proxyUrls = [
-                    'https://corsproxy.io/?',
-                    'https://api.codetabs.com/v1/proxy?quest=',
-                    'https://thingproxy.freeboard.io/fetch/'
-                ];
+                // 사용자에게 선택지 제공
+                const userChoice = confirm(
+                    `CORS 정책으로 인해 자동 전송이 불가능합니다.\n\n` +
+                    `선택하세요:\n` +
+                    `• 확인: 텔레그램 웹 버전 열기 (메시지는 클립보드에 복사됨)\n` +
+                    `• 취소: 텔레그램 앱에서 직접 붙여넣기`
+                );
                 
-                let success = false;
-                let lastError = null;
-                
-                for (const proxyUrl of proxyUrls) {
-                    try {
-                        console.log(`프록시 시도: ${proxyUrl}`);
-                        
-                        const fullUrl = proxyUrl + encodeURIComponent(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`);
-                        console.log('전체 URL:', fullUrl);
-                        
-                        const response = await fetch(fullUrl, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify(requestBody)
-                        });
-                        
-                        console.log('응답 상태:', response.status, response.statusText);
-                        
-                        if (response.ok) {
-                            const result = await response.json();
-                            console.log('API 응답:', result);
-                            
-                            if (result.ok) {
-                                console.log('✅ 텔레그램 메시지 전송 성공:', result);
-                                alert('텔레그램 전송 성공!');
-                                success = true;
-                                break;
-                            } else {
-                                console.error('❌ 텔레그램 메시지 전송 실패:', result);
-                                alert(`텔레그램 전송 실패: ${result.description || '알 수 없는 오류'}`);
-                                success = true; // API는 성공했지만 메시지 전송 실패
-                                break;
-                            }
-                        } else {
-                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                        }
-                        
-                    } catch (error) {
-                        console.warn(`프록시 실패 (${proxyUrl}):`, error.message);
-                        lastError = error;
-                        continue; // 다음 프록시 시도
-                    }
+                if (userChoice) {
+                    // 텔레그램 웹 버전 열기
+                    window.open(telegramWebUrl, '_blank');
+                    alert('메시지가 클립보드에 복사되었습니다.\n텔레그램 웹 버전에서 붙여넣기(Ctrl+V)하세요.');
+                } else {
+                    // 클립보드만 복사
+                    alert('메시지가 클립보드에 복사되었습니다.\n텔레그램 앱에서 붙여넣기하세요.');
                 }
                 
-                if (!success) {
-                    throw lastError || new Error('모든 프록시 서버 실패');
-                }
+                console.log('✅ 메시지가 클립보드에 복사되었습니다.');
                 
             } catch (error) {
-                console.error('❌ 텔레그램 전송 오류:', error);
+                console.error('❌ 클립보드 복사 오류:', error);
                 
-                let errorMessage = '텔레그램 전송 중 오류가 발생했습니다.';
+                // 클립보드 복사 실패 시 텍스트 표시
+                const textArea = document.createElement('textarea');
+                textArea.value = message;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
                 
-                if (error.message.includes('Failed to fetch')) {
-                    errorMessage = '네트워크 연결 오류 - 인터넷 연결을 확인해주세요.';
-                } else if (error.message.includes('모든 프록시 서버 실패')) {
-                    errorMessage = '모든 프록시 서버가 실패했습니다. 잠시 후 다시 시도해주세요.';
-                } else {
-                    errorMessage = `오류: ${error.message}`;
+                try {
+                    document.execCommand('copy');
+                    alert('메시지가 클립보드에 복사되었습니다.\n텔레그램에서 붙여넣기하세요.');
+                    console.log('✅ 대체 방법으로 클립보드 복사 성공');
+                } catch (fallbackError) {
+                    console.error('❌ 대체 클립보드 복사도 실패:', fallbackError);
+                    
+                    // 최후의 수단: 텍스트를 모달로 표시
+                    const modal = document.createElement('div');
+                    modal.style.cssText = `
+                        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                        background: rgba(0,0,0,0.8); z-index: 10000; display: flex;
+                        align-items: center; justify-content: center; padding: 20px;
+                    `;
+                    
+                    const content = document.createElement('div');
+                    content.style.cssText = `
+                        background: white; padding: 20px; border-radius: 10px;
+                        max-width: 500px; max-height: 80%; overflow: auto;
+                        font-family: monospace; white-space: pre-wrap;
+                    `;
+                    content.textContent = message;
+                    
+                    const closeBtn = document.createElement('button');
+                    closeBtn.textContent = '닫기';
+                    closeBtn.style.cssText = `
+                        margin-top: 10px; padding: 10px 20px;
+                        background: #007bff; color: white; border: none;
+                        border-radius: 5px; cursor: pointer;
+                    `;
+                    closeBtn.onclick = () => document.body.removeChild(modal);
+                    
+                    content.appendChild(closeBtn);
+                    modal.appendChild(content);
+                    document.body.appendChild(modal);
+                    
+                    alert('텍스트가 화면에 표시됩니다.\n수동으로 복사하여 텔레그램에 붙여넣기하세요.');
+                } finally {
+                    document.body.removeChild(textArea);
                 }
-                
-                alert(errorMessage);
             }
         }
 
