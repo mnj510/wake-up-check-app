@@ -2569,15 +2569,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('요청 본문:', requestBody);
                 console.log('API URL:', `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`);
                 
+                // 네트워크 타임아웃 설정 (10초)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+                
                 const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(requestBody)
+                    body: JSON.stringify(requestBody),
+                    signal: controller.signal
                 });
 
+                clearTimeout(timeoutId);
                 console.log('응답 상태:', response.status, response.statusText);
+                
+                // 응답이 성공적인지 확인
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
                 
                 const result = await response.json();
                 console.log('API 응답:', result);
@@ -2591,7 +2602,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (error) {
                 console.error('❌ 텔레그램 전송 오류:', error);
-                alert(`텔레그램 전송 오류: ${error.message}`);
+                
+                let errorMessage = '텔레그램 전송 중 오류가 발생했습니다.';
+                
+                if (error.name === 'AbortError') {
+                    errorMessage = '텔레그램 전송 시간 초과 (10초) - 네트워크 연결을 확인해주세요.';
+                } else if (error.message.includes('Failed to fetch')) {
+                    errorMessage = '네트워크 연결 오류 - 인터넷 연결을 확인해주세요.';
+                } else if (error.message.includes('HTTP')) {
+                    errorMessage = `서버 오류: ${error.message}`;
+                } else {
+                    errorMessage = `오류: ${error.message}`;
+                }
+                
+                alert(errorMessage);
             }
         }
 
