@@ -2569,48 +2569,62 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('요청 본문:', requestBody);
                 console.log('API URL:', `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`);
                 
-                // JSONP 방식으로 CORS 우회
-                const telegramUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-                const params = new URLSearchParams();
-                params.append('chat_id', TELEGRAM_CHAT_ID);
-                params.append('text', message);
+                // 다양한 CORS 프록시 시도
+                const proxyUrls = [
+                    'https://corsproxy.io/?',
+                    'https://api.codetabs.com/v1/proxy?quest=',
+                    'https://thingproxy.freeboard.io/fetch/'
+                ];
                 
-                // JSONP 요청을 위한 스크립트 태그 생성
-                const script = document.createElement('script');
-                const callbackName = 'telegramCallback_' + Date.now();
+                let success = false;
+                let lastError = null;
                 
-                // 전역 콜백 함수 등록
-                window[callbackName] = function(response) {
-                    console.log('텔레그램 API 응답:', response);
-                    
-                    if (response.ok) {
-                        console.log('✅ 텔레그램 메시지 전송 성공:', response);
-                        alert('텔레그램 전송 성공!');
-                    } else {
-                        console.error('❌ 텔레그램 메시지 전송 실패:', response);
-                        alert(`텔레그램 전송 실패: ${response.description || '알 수 없는 오류'}`);
+                for (const proxyUrl of proxyUrls) {
+                    try {
+                        console.log(`프록시 시도: ${proxyUrl}`);
+                        
+                        const fullUrl = proxyUrl + encodeURIComponent(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`);
+                        console.log('전체 URL:', fullUrl);
+                        
+                        const response = await fetch(fullUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(requestBody)
+                        });
+                        
+                        console.log('응답 상태:', response.status, response.statusText);
+                        
+                        if (response.ok) {
+                            const result = await response.json();
+                            console.log('API 응답:', result);
+                            
+                            if (result.ok) {
+                                console.log('✅ 텔레그램 메시지 전송 성공:', result);
+                                alert('텔레그램 전송 성공!');
+                                success = true;
+                                break;
+                            } else {
+                                console.error('❌ 텔레그램 메시지 전송 실패:', result);
+                                alert(`텔레그램 전송 실패: ${result.description || '알 수 없는 오류'}`);
+                                success = true; // API는 성공했지만 메시지 전송 실패
+                                break;
+                            }
+                        } else {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        
+                    } catch (error) {
+                        console.warn(`프록시 실패 (${proxyUrl}):`, error.message);
+                        lastError = error;
+                        continue; // 다음 프록시 시도
                     }
-                    
-                    // 정리
-                    document.head.removeChild(script);
-                    delete window[callbackName];
-                };
+                }
                 
-                // JSONP 요청 URL 생성
-                const jsonpUrl = `${telegramUrl}?${params.toString()}&callback=${callbackName}`;
-                console.log('JSONP URL:', jsonpUrl);
-                
-                script.src = jsonpUrl;
-                script.onerror = function() {
-                    console.error('❌ JSONP 요청 실패');
-                    alert('텔레그램 전송 실패 - 네트워크 오류');
-                    
-                    // 정리
-                    document.head.removeChild(script);
-                    delete window[callbackName];
-                };
-                
-                document.head.appendChild(script);
+                if (!success) {
+                    throw lastError || new Error('모든 프록시 서버 실패');
+                }
                 
             } catch (error) {
                 console.error('❌ 텔레그램 전송 오류:', error);
@@ -2619,6 +2633,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (error.message.includes('Failed to fetch')) {
                     errorMessage = '네트워크 연결 오류 - 인터넷 연결을 확인해주세요.';
+                } else if (error.message.includes('모든 프록시 서버 실패')) {
+                    errorMessage = '모든 프록시 서버가 실패했습니다. 잠시 후 다시 시도해주세요.';
                 } else {
                     errorMessage = `오류: ${error.message}`;
                 }
